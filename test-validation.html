@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prueba Validación Formulario</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.2/font/bootstrap-icons.min.css">
+</head>
+<body>
+    <div class="container mt-4">
+        <h1>Prueba de Validación de Formulario de Edición</h1>
+        
+        <div class="row">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header bg-primary text-white">Formulario de Prueba</div>
+                    <div class="card-body">
+                        <!-- Área de mensajes de error -->
+                        <div id="testError" class="alert alert-danger" style="display: none;"></div>
+                        
+                        <form id="testForm">
+                            <div class="mb-3">
+                                <label for="testFecha" class="form-label">Fecha</label>
+                                <input type="date" class="form-control" id="testFecha">
+                                <small class="form-text text-muted">No puede ser anterior a hoy</small>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="testHora" class="form-label">Hora</label>
+                                <input type="time" class="form-control" id="testHora">
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="testComensales" class="form-label">Número de comensales</label>
+                                <select class="form-select" id="testComensales">
+                                    <option value="">Seleccione...</option>
+                                    <option value="1">1 persona</option>
+                                    <option value="2">2 personas</option>
+                                    <option value="3">3 personas</option>
+                                    <option value="4">4 personas</option>
+                                    <option value="5">5 personas</option>
+                                    <option value="8">8 personas</option>
+                                    <option value="9">9 personas (inválido)</option>
+                                </select>
+                                <small class="form-text text-muted">Debe estar entre 1 y 8</small>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="testEstado" class="form-label">Estado</label>
+                                <select class="form-select" id="testEstado">
+                                    <option value="">Seleccione...</option>
+                                    <option value="pendiente">Pendiente</option>
+                                    <option value="confirmada">Confirmada</option>
+                                    <option value="cancelada">Cancelada</option>
+                                </select>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="testObservaciones" class="form-label">Observaciones</label>
+                                <textarea class="form-control" id="testObservaciones" rows="3"></textarea>
+                            </div>
+                            
+                            <button type="button" class="btn btn-primary" onclick="testValidation()">Validar Formulario</button>
+                            <button type="button" class="btn btn-secondary" onclick="clearForm()">Limpiar</button>
+                            <button type="button" class="btn btn-success" onclick="fillValidData()">Llenar Datos Válidos</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header bg-info text-white">Casos de Prueba</div>
+                    <div class="card-body">
+                        <h5>Pruebas Automáticas:</h5>
+                        <div class="d-grid gap-2">
+                            <button class="btn btn-outline-danger" onclick="testInvalidDate()">Fecha Inválida</button>
+                            <button class="btn btn-outline-danger" onclick="testEmptyFields()">Campos Vacíos</button>
+                            <button class="btn btn-outline-danger" onclick="testInvalidComensales()">Comensales Inválidos</button>
+                            <button class="btn btn-outline-success" onclick="testValidForm()">Formulario Válido</button>
+                        </div>
+                        
+                        <hr>
+                        
+                        <h5>Resultados:</h5>
+                        <div id="testResults" class="border p-3 bg-light" style="min-height: 200px; font-family: monospace; font-size: 14px;">
+                            Esperando pruebas...
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Funciones de validación (copiadas del sistema principal)
+        function validateReservationForm() {
+            const fecha = document.getElementById('testFecha').value.trim();
+            const hora = document.getElementById('testHora').value.trim();
+            const comensales = document.getElementById('testComensales').value;
+            const estado = document.getElementById('testEstado').value;
+            
+            // Validar fecha
+            if (!fecha) {
+                return 'La fecha es obligatoria';
+            }
+            
+            // Validar que la fecha no sea anterior a hoy
+            const selectedDate = new Date(fecha);
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            
+            if (selectedDate < today) {
+                return 'La fecha no puede ser anterior a hoy';
+            }
+            
+            // Validar hora
+            if (!hora) {
+                return 'La hora es obligatoria';
+            }
+            
+            // Validar número de comensales
+            if (!comensales || comensales < 1 || comensales > 8) {
+                return 'El número de comensales debe estar entre 1 y 8';
+            }
+            
+            // Validar estado
+            if (!estado) {
+                return 'El estado es obligatorio';
+            }
+            
+            // Si todas las validaciones pasan
+            return null;
+        }
+
+        function showTestError(message) {
+            const errorDiv = document.getElementById('testError');
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+        }
+
+        function hideTestError() {
+            const errorDiv = document.getElementById('testError');
+            errorDiv.style.display = 'none';
+        }
+
+        function addTestResult(test, result) {
+            const resultsDiv = document.getElementById('testResults');
+            const timestamp = new Date().toLocaleTimeString();
+            const resultClass = result.success ? 'text-success' : 'text-danger';
+            
+            resultsDiv.innerHTML += `<div><strong>[${timestamp}] ${test}:</strong> <span class="${resultClass}">${result.message}</span></div>`;
+            resultsDiv.scrollTop = resultsDiv.scrollHeight;
+        }
+
+        // Funciones de prueba
+        function testValidation() {
+            hideTestError();
+            const error = validateReservationForm();
+            
+            if (error) {
+                showTestError(error);
+                addTestResult('Validación Manual', { success: false, message: error });
+            } else {
+                addTestResult('Validación Manual', { success: true, message: 'Formulario válido' });
+            }
+        }
+
+        function clearForm() {
+            document.getElementById('testForm').reset();
+            hideTestError();
+            addTestResult('Limpiar Formulario', { success: true, message: 'Formulario limpiado' });
+        }
+
+        function fillValidData() {
+            const today = new Date();
+            const tomorrow = new Date(today);
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            
+            document.getElementById('testFecha').value = tomorrow.toISOString().split('T')[0];
+            document.getElementById('testHora').value = '19:00';
+            document.getElementById('testComensales').value = '4';
+            document.getElementById('testEstado').value = 'confirmada';
+            document.getElementById('testObservaciones').value = 'Reserva de prueba';
+            
+            hideTestError();
+            addTestResult('Llenar Datos Válidos', { success: true, message: 'Formulario llenado con datos válidos' });
+        }
+
+        function testInvalidDate() {
+            const yesterday = new Date();
+            yesterday.setDate(yesterday.getDate() - 1);
+            
+            document.getElementById('testFecha').value = yesterday.toISOString().split('T')[0];
+            document.getElementById('testHora').value = '19:00';
+            document.getElementById('testComensales').value = '4';
+            document.getElementById('testEstado').value = 'confirmada';
+            
+            const error = validateReservationForm();
+            addTestResult('Fecha Inválida', { 
+                success: !!error, 
+                message: error || 'Validación pasó (error inesperado)' 
+            });
+            
+            if (error) showTestError(error);
+        }
+
+        function testEmptyFields() {
+            document.getElementById('testFecha').value = '';
+            document.getElementById('testHora').value = '';
+            document.getElementById('testComensales').value = '';
+            document.getElementById('testEstado').value = '';
+            
+            const error = validateReservationForm();
+            addTestResult('Campos Vacíos', { 
+                success: !!error, 
+                message: error || 'Validación pasó (error inesperado)' 
+            });
+            
+            if (error) showTestError(error);
+        }
+
+        function testInvalidComensales() {
+            const today = new Date();
+            const tomorrow = new Date(today);
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            
+            document.getElementById('testFecha').value = tomorrow.toISOString().split('T')[0];
+            document.getElementById('testHora').value = '19:00';
+            document.getElementById('testComensales').value = '9';
+            document.getElementById('testEstado').value = 'confirmada';
+            
+            const error = validateReservationForm();
+            addTestResult('Comensales Inválidos', { 
+                success: !!error, 
+                message: error || 'Validación pasó (error inesperado)' 
+            });
+            
+            if (error) showTestError(error);
+        }
+
+        function testValidForm() {
+            fillValidData();
+            
+            const error = validateReservationForm();
+            addTestResult('Formulario Válido', { 
+                success: !error, 
+                message: error || 'Formulario completamente válido' 
+            });
+            
+            if (!error) {
+                hideTestError();
+            }
+        }
+
+        // Inicializar con datos válidos
+        document.addEventListener('DOMContentLoaded', function() {
+            addTestResult('Sistema Iniciado', { success: true, message: 'Página de prueba lista' });
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prueba Cancelación del Día</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.2/font/bootstrap-icons.min.css">
+</head>
+<body>
+    <div class="container mt-4">
+        <h1>Prueba de Validación para Cancelaciones del Día</h1>
+        
+        <div class="row">
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header bg-warning text-dark">Formulario de Prueba</div>
+                    <div class="card-body">
+                        <!-- Área de mensajes de error -->
+                        <div id="cancelTestError" class="alert alert-danger" style="display: none;"></div>
+                        
+                        <form id="cancelTestForm">
+                            <div class="mb-3">
+                                <label for="testFecha" class="form-label">Fecha</label>
+                                <input type="date" class="form-control" id="testFecha">
+                                <small class="form-text text-muted">Prueba con fecha de hoy</small>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="testHora" class="form-label">Hora</label>
+                                <input type="time" class="form-control" id="testHora">
+                                <small class="form-text text-muted">Prueba con hora actual y pasada</small>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="testComensales" class="form-label">Número de comensales</label>
+                                <select class="form-select" id="testComensales">
+                                    <option value="4">4 personas</option>
+                                </select>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="testEstado" class="form-label">Estado</label>
+                                <select class="form-select" id="testEstado">
+                                    <option value="confirmada">Confirmada</option>
+                                    <option value="cancelada">Cancelada</option>
+                                </select>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="testObservaciones" class="form-label">Observaciones</label>
+                                <textarea class="form-control" id="testObservaciones" rows="2"></textarea>
+                            </div>
+                            
+                            <div class="d-grid gap-2">
+                                <button type="button" class="btn btn-warning" onclick="testCancelToday()">Test: Cancelar Hoy</button>
+                                <button type="button" class="btn btn-info" onclick="testCancelYesterday()">Test: Cancelar Ayer</button>
+                                <button type="button" class="btn btn-success" onclick="testConfirmToday()">Test: Confirmar Hoy</button>
+                                <button type="button" class="btn btn-secondary" onclick="clearTestForm()">Limpiar</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-6">
+                <div class="card">
+                    <div class="card-header bg-info text-white">Resultados de Pruebas</div>
+                    <div class="card-body">
+                        <h5>Escenarios de Prueba:</h5>
+                        <div class="list-group">
+                            <div class="list-group-item">
+                                <strong>✅ Permitido:</strong> Cancelación para fecha de hoy (ej: 31/01/2026)
+                            </div>
+                            <div class="list-group-item">
+                                <strong>❌ Bloqueado:</strong> Cambio a confirmada para fecha de ayer
+                            </div>
+                            <div class="list-group-item">
+                                <strong>✅ Permitido:</strong> Cualquier cambio para fechas futuras
+                            </div>
+                            <div class="list-group-item">
+                                <strong>❌ Bloqueado:</strong> Cancelación para fecha pasada (ayer)
+                            </div>
+                        </div>
+                        
+                        <hr>
+                        
+                        <h6>Logs de Validación:</h6>
+                        <div id="testLogs" class="border p-3 bg-dark text-light" style="height: 300px; overflow-y: auto; font-family: monospace; font-size: 12px;">
+                            Esperando pruebas...
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Función de validación (copiada del sistema principal)
+        function validateReservationForm() {
+            const fecha = document.getElementById('testFecha').value.trim();
+            const hora = document.getElementById('testHora').value.trim();
+            const comensales = document.getElementById('testComensales').value;
+            const estado = document.getElementById('testEstado').value;
+            
+            // Validar fecha
+            if (!fecha) {
+                return 'La fecha es obligatoria';
+            }
+            
+            // Validar que la fecha no sea anterior a hoy
+            const selectedDate = new Date(fecha);
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            
+            // Permitir cambios para cancelaciones del mismo día, aunque sea pasado la hora actual
+            if (selectedDate < today) {
+                // Permitir si es cancelación del mismo día
+                if (estado === 'cancelada') {
+                    const reservationTime = new Date(`${fecha} ${hora}`);
+                    const now = new Date();
+                    
+                    // Si es cancelación del mismo día, permitir incluso si la hora ya pasó
+                    const selectedDateOnly = new Date(selectedDate.getFullYear(), selectedDate.getMonth(), selectedDate.getDate());
+                    const todayOnly = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+                    
+                    if (selectedDateOnly.getTime() === todayOnly.getTime()) {
+                        console.log('Permitiendo cancelación del mismo día');
+                        return null; // Permitir cancelación del día
+                    }
+                }
+                
+                return 'La fecha no puede ser anterior a hoy';
+            }
+            
+            // Validar hora
+            if (!hora) {
+                return 'La hora es obligatoria';
+            }
+            
+            // Validar número de comensales
+            if (!comensales || comensales < 1 || comensales > 8) {
+                return 'El número de comensales debe estar entre 1 y 8';
+            }
+            
+            // Validar estado
+            if (!estado) {
+                return 'El estado es obligatorio';
+            }
+            
+            // Si todas las validaciones pasan
+            return null;
+        }
+
+        function showTestError(message) {
+            const errorDiv = document.getElementById('cancelTestError');
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+        }
+
+        function hideTestError() {
+            const errorDiv = document.getElementById('cancelTestError');
+            errorDiv.style.display = 'none';
+        }
+
+        function addLog(message, isError = false) {
+            const logsDiv = document.getElementById('testLogs');
+            const timestamp = new Date().toLocaleTimeString();
+            const logClass = isError ? 'text-danger' : 'text-success';
+            
+            logsDiv.innerHTML += `<div><span class="${logClass}">[${timestamp}] ${message}</span></div>`;
+            logsDiv.scrollTop = logsDiv.scrollHeight;
+        }
+
+        function testCancelToday() {
+            hideTestError();
+            
+            const today = new Date();
+            const todayStr = today.toISOString().split('T')[0]; // YYYY-MM-DD
+            const nowStr = today.toTimeString().split(' ')[0].substring(0, 5); // HH:MM
+            
+            document.getElementById('testFecha').value = todayStr;
+            document.getElementById('testHora').value = nowStr;
+            document.getElementById('testComensales').value = '4';
+            document.getElementById('testEstado').value = 'cancelada';
+            document.getElementById('testObservaciones').value = 'Cancelación del mismo día';
+            
+            const error = validateReservationForm();
+            
+            if (error) {
+                showTestError(error);
+                addLog(`❌ Cancelar Hoy: ${error}`, true);
+            } else {
+                hideTestError();
+                addLog(`✅ Cancelar Hoy: Validación pasada (cancelación del día permitida)`);
+            }
+        }
+
+        function testCancelYesterday() {
+            hideTestError();
+            
+            const yesterday = new Date();
+            yesterday.setDate(yesterday.getDate() - 1);
+            const yesterdayStr = yesterday.toISOString().split('T')[0];
+            
+            document.getElementById('testFecha').value = yesterdayStr;
+            document.getElementById('testHora').value = '19:00';
+            document.getElementById('testComensales').value = '4';
+            document.getElementById('testEstado').value = 'cancelada';
+            document.getElementById('testObservaciones').value = 'Cancelación de ayer (debe bloquear)';
+            
+            const error = validateReservationForm();
+            
+            if (error) {
+                showTestError(error);
+                addLog(`❌ Cancelar Ayer: ${error} (correcto - debe bloquear)`, false);
+            } else {
+                hideTestError();
+                addLog(`⚠️ Cancelar Ayer: Validación pasada (inesperado - debería bloquear)`, true);
+            }
+        }
+
+        function testConfirmToday() {
+            hideTestError();
+            
+            const today = new Date();
+            const todayStr = today.toISOString().split('T')[0];
+            const nowStr = today.toTimeString().split(' ')[0].substring(0, 5);
+            
+            document.getElementById('testFecha').value = todayStr;
+            document.getElementById('testHora').value = nowStr;
+            document.getElementById('testComensales').value = '4';
+            document.getElementById('testEstado').value = 'confirmada';
+            document.getElementById('testObservaciones').value = 'Confirmación del mismo día';
+            
+            const error = validateReservationForm();
+            
+            if (error) {
+                showTestError(error);
+                addLog(`❌ Confirmar Hoy: ${error}`, true);
+            } else {
+                hideTestError();
+                addLog(`✅ Confirmar Hoy: Validación pasada`);
+            }
+        }
+
+        function clearTestForm() {
+            document.getElementById('cancelTestForm').reset();
+            hideTestError();
+            addLog(`🧹 Formulario limpiado`);
+        }
+
+        // Inicializar con fecha de hoy
+        document.addEventListener('DOMContentLoaded', function() {
+            const today = new Date();
+            const todayStr = today.toISOString().split('T')[0];
+            document.getElementById('testFecha').value = todayStr;
+            
+            addLog(`🚀 Página de prueba inicializada`);
+            addLog(`📅 Fecha actual: ${todayStr}`);
+        });
+    </script>
+</body>
+</html>

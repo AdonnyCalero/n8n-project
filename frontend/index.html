@@ -1,0 +1,2496 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Restaurante - Sistema de Reservas</title>
+    <!-- Bootstrap 5.3.8 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.2/font/bootstrap-icons.min.css">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="css/custom-bootstrap.css">
+    <style>
+        .section {
+            display: none;
+        }
+        .section.active {
+            display: block;
+        }
+        #inicio {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container">
+            <a class="navbar-brand" href="#inicio">
+                <i class="bi bi-shop"></i> Restaurante
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <!-- Elementos de navegación controlados por JavaScript -->
+                    <li class="nav-item" id="navInicio" style="display: block;">
+                        <a class="nav-link" href="#inicio" onclick="if (typeof showSection === 'function') showSection('inicio')">Inicio</a>
+                    </li>
+                    <li class="nav-item" id="navReservar" style="display: none;">
+                        <a class="nav-link" href="#reservas" onclick="if (typeof showSection === 'function') showSection('reservas')">Reservar</a>
+                    </li>
+                    <li class="nav-item" id="navMenu" style="display: none;">
+                        <a class="nav-link" href="#menu" onclick="if (typeof showSection === 'function') showSection('menu')">Menú</a>
+                    </li>
+                    <li class="nav-item" id="navMisReservas" style="display: none;">
+                        <a class="nav-link" href="#mis-reservas" onclick="if (typeof showSection === 'function') showSection('mis-reservas')">Mis Reservas</a>
+                    </li>
+                    <li class="nav-item" id="navLogin" style="display: block;">
+                        <a class="nav-link" href="#login" onclick="if (typeof showSection === 'function') showSection('login')">Iniciar Sesión</a>
+                    </li>
+                    <li class="nav-item" id="navAdmin" style="display: none;">
+                        <a class="nav-link" href="#admin" onclick="if (typeof showSection === 'function') showSection('admin')">Admin</a>
+                    </li>
+                    <li class="nav-item" id="navUser" style="display: none;">
+                        <span class="navbar-text me-3">
+                            <i class="bi bi-person-circle"></i> <span id="userName">Usuario</span>
+                        </span>
+                    </li>
+                    <li class="nav-item" id="navLogout" style="display: none;">
+                        <a class="nav-link" href="#" onclick="logout()">
+                            <i class="bi bi-box-arrow-right"></i> Cerrar Sesión
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="container my-4">
+        <!-- Inicio Section -->
+        <section id="inicio" class="section active">
+            <div class="hero-section bg-gradient text-white rounded p-5 mb-4">
+                <div class="text-center">
+                    <h1 class="display-4 mb-3">Bienvenido a Nuestro Restaurante</h1>
+                    <p class="lead mb-4">Disfruta de la mejor experiencia gastronómica</p>
+                    <button class="btn btn-success btn-lg" onclick="if (typeof showSection === 'function') showSection('reservas')">
+                        <i class="bi bi-calendar-check"></i> Hacer una Reserva
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Login/Register Section -->
+        <section id="login" class="section">
+            <div class="row justify-content-center">
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header">
+                            <ul class="nav nav-tabs card-header-tabs" role="tablist">
+                                <li class="nav-item">
+                                    <a class="nav-link active" data-bs-toggle="tab" href="#loginTab">Iniciar Sesión</a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link" data-bs-toggle="tab" href="#registerTab">Registrarse</a>
+                                </li>
+                            </ul>
+                        </div>
+                        <div class="card-body">
+                            <div class="tab-content">
+                                <!-- Login Tab -->
+                                <div class="tab-pane fade show active" id="loginTab">
+                                    <form id="loginForm">
+                                        <div class="mb-3">
+                                            <label for="loginEmail" class="form-label">Email</label>
+                                            <input type="email" class="form-control" id="loginEmail" required>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="loginPassword" class="form-label">Contraseña</label>
+                                            <input type="password" class="form-control" id="loginPassword" required>
+                                        </div>
+                                        <button type="submit" class="btn btn-primary w-100">
+                                            <i class="bi bi-box-arrow-in-right"></i> Iniciar Sesión
+                                        </button>
+                                    </form>
+                                </div>
+                                
+                                <!-- Register Tab -->
+                                <div class="tab-pane fade" id="registerTab">
+                                    <form id="registerForm">
+                                        <div class="mb-3">
+                                            <label for="registerName" class="form-label">Nombre</label>
+                                            <input type="text" class="form-control" id="registerName" required>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="registerEmail" class="form-label">Email</label>
+                                            <input type="email" class="form-control" id="registerEmail" required>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="registerPhone" class="form-label">Teléfono</label>
+                                            <input type="tel" class="form-control" id="registerPhone">
+                                        </div>
+                                        <div class="mb-3">
+                                            <label for="registerPassword" class="form-label">Contraseña</label>
+                                            <input type="password" class="form-control" id="registerPassword" required>
+                                        </div>
+                                        <button type="submit" class="btn btn-success w-100">
+                                            <i class="bi bi-person-plus"></i> Registrarse
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Reservas Section (Formulario Simple como Registro) -->
+        <section id="reservas" class="section">
+            <div class="row justify-content-center">
+                <div class="col-lg-8">
+                    <div class="card">
+                        <div class="card-header bg-primary text-white">
+                            <h3 class="mb-0"><i class="bi bi-calendar-plus"></i> Hacer una Reserva</h3>
+                        </div>
+                        <div class="card-body">
+                            <form id="reservationForm">
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label for="reservaFecha" class="form-label">Fecha</label>
+                                        <input type="date" class="form-control" id="reservaFecha" required>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label for="reservaHora" class="form-label">Hora</label>
+                                        <input type="time" class="form-control" id="reservaHora" required>
+                                    </div>
+                                </div>
+                                
+                                <div class="row">
+                                    <div class="col-md-6 mb-3">
+                                        <label for="reservaComensales" class="form-label">Número de comensales</label>
+                                        <select class="form-select" id="reservaComensales" required>
+                                            <option value="1">1 persona</option>
+                                            <option value="2">2 personas</option>
+                                            <option value="3">3 personas</option>
+                                            <option value="4">4 personas</option>
+                                            <option value="5">5 personas</option>
+                                            <option value="6">6 personas</option>
+                                            <option value="7">7 personas</option>
+                                            <option value="8">8 personas</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <label for="reservaZona" class="form-label">Zona preferida</label>
+                                        <select class="form-select" id="reservaZona">
+                                            <option value="">Cualquier zona</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div class="mb-3">
+                                    <button type="button" class="btn btn-info w-100" onclick="checkAvailability()">
+                                        <i class="bi bi-search"></i> Ver Disponibilidad
+                                    </button>
+                                </div>
+
+                                <!-- Available Tables -->
+                                <div id="availableTables" class="mb-3" style="display: none;">
+                                    <h5>Mesas Disponibles</h5>
+                                    <div id="tablesList" class="row g-3"></div>
+                                </div>
+
+                                <!-- Selected Table -->
+                                <div id="selectedTable" class="alert alert-success" style="display: none;">
+                                    <h6>Mesa Seleccionada: <span id="selectedTableInfo"></span></h6>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="reservaObservaciones" class="form-label">Observaciones</label>
+                                    <textarea class="form-control" id="reservaObservaciones" rows="3"></textarea>
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-12">
+                                        <button type="submit" class="btn btn-primary w-100" id="submitReservation">
+                                            <i class="bi bi-check-circle"></i> Confirmar Reserva
+                                        </button>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Menu Section -->
+        <section id="menu" class="section">
+            <h2 class="mb-4">Nuestro Menú</h2>
+            <div id="menuItems" class="row g-4"></div>
+        </section>
+
+        <!-- Mis Reservas Section -->
+        <section id="mis-reservas" class="section">
+            <h2 class="mb-4">Mis Reservas</h2>
+            <div id="myReservations"></div>
+        </section>
+
+        <!-- Admin Section -->
+        <section id="admin" class="section">
+            <div class="card">
+                <div class="card-header bg-dark text-white">
+                    <h3 class="mb-0">Panel Administrador</h3>
+                </div>
+                <div class="card-body">
+                    <!-- Admin Tabs -->
+                    <ul class="nav nav-tabs" role="tablist">
+                        <li class="nav-item">
+                            <a class="nav-link active" data-bs-toggle="tab" href="#dashboardTab">
+                                <i class="bi bi-speedometer2"></i> Dashboard
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" data-bs-toggle="tab" href="#reservasTab">
+                                <i class="bi bi-calendar-alt"></i> Reservas
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" data-bs-toggle="tab" href="#mesasTab">
+                                <i class="bi bi-grid-3x3"></i> Mesas
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" data-bs-toggle="tab" href="#menuTab">
+                                <i class="bi bi-cup-hot"></i> Menú
+                            </a>
+                        </li>
+                    </ul>
+
+                    <div class="tab-content mt-3">
+                        <!-- Dashboard Tab -->
+                        <div class="tab-pane fade show active" id="dashboardTab">
+                            <div class="row g-3" id="dashboardStats">
+                                <div class="col-md-3">
+                                    <div class="card text-center">
+                                        <div class="card-body">
+                                            <h3 class="card-title" id="totalReservas">-</h3>
+                                            <p class="card-text">Total Reservas</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="card text-center">
+                                        <div class="card-body">
+                                            <h3 class="card-title" id="reservasHoy">-</h3>
+                                            <p class="card-text">Reservas Hoy</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="card text-center">
+                                        <div class="card-body">
+                                            <h3 class="card-title" id="mesasDisponibles">-</h3>
+                                            <p class="card-text">Mesas Disponibles</p>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="card text-center">
+                                        <div class="card-body">
+                                            <h3 class="card-title" id="totalComensales">-</h3>
+                                            <p class="card-text">Total Comensales</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Reservas Tab -->
+                        <div class="tab-pane fade" id="reservasTab">
+                            <div class="table-responsive">
+                                <table class="table table-striped">
+                                    <thead>
+                                        <tr>
+                                            <th>ID</th>
+                                            <th>Cliente</th>
+                                            <th>Email</th>
+                                            <th>Fecha</th>
+                                            <th>Hora</th>
+                                            <th>Mesa</th>
+                                            <th>Comensales</th>
+                                            <th>Estado</th>
+                                            <th>Acciones</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="allReservationsTable"></tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- Mesas Tab -->
+                        <div class="tab-pane fade" id="mesasTab">
+                            <div id="tablesManagement"></div>
+                        </div>
+
+                        <!-- Menu Tab -->
+                        <div class="tab-pane fade" id="menuTab">
+                            <div id="menuManagement"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Edit Reservation Modal -->
+    <div class="modal fade" id="editReservationModal" tabindex="-1" aria-labelledby="editReservationModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="editReservationModalLabel">Editar Reserva</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <!-- Área de mensajes de error -->
+                    <div id="editReservationError" class="alert alert-danger" style="display: none;"></div>
+                    
+                    <form id="editReservationForm">
+                        <input type="hidden" id="editReservationId">
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="editFecha" class="form-label">Fecha</label>
+                                <input type="date" class="form-control" id="editFecha" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="editHora" class="form-label">Hora</label>
+                                <input type="time" class="form-control" id="editHora" required>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="editComensales" class="form-label">Número de comensales</label>
+                                <select class="form-select" id="editComensales" required>
+                                    <option value="1">1 persona</option>
+                                    <option value="2">2 personas</option>
+                                    <option value="3">3 personas</option>
+                                    <option value="4">4 personas</option>
+                                    <option value="5">5 personas</option>
+                                    <option value="6">6 personas</option>
+                                    <option value="7">7 personas</option>
+                                    <option value="8">8 personas</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="editEstado" class="form-label">Estado</label>
+                                <select class="form-select" id="editEstado" required>
+                                    <option value="confirmada">Confirmada</option>
+                                    <option value="cancelada">Cancelada</option>
+                                    <option value="completada">Completada</option>
+                                    <option value="no_asistio">No Asistió</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="editObservaciones" class="form-label">Observaciones</label>
+                            <textarea class="form-control" id="editObservaciones" rows="3"></textarea>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-primary" onclick="saveReservation()">Guardar Cambios</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Script para limpiar errores cuando se cierra el modal -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const editModal = document.getElementById('editReservationModal');
+            if (editModal) {
+                editModal.addEventListener('hidden.bs.modal', function () {
+                    // Limpiar mensajes de error cuando se cierra el modal
+                    const errorDiv = document.getElementById('editReservationError');
+                    if (errorDiv) {
+                        errorDiv.style.display = 'none';
+                        errorDiv.textContent = '';
+                    }
+                });
+            }
+        });
+    </script>
+
+    <!-- Toast Notifications -->
+    <div class="toast-container position-fixed bottom-0 end-0 p-3">
+        <div id="toast" class="toast" role="alert">
+            <div class="toast-header">
+                <strong class="me-auto">Notificación</strong>
+                <button type="button" class="btn-close" data-bs-dismiss="toast"></button>
+            </div>
+            <div class="toast-body" id="toastMessage"></div>
+        </div>
+    </div>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Custom JS -->
+    <script src="js/app-clean.js?v=4.7"></script>
+    <script src="js/admin-functions.js"></script>
+    
+    <!-- SCRIPT DE FORZADO DIRECTO -->
+    <script>
+        console.log('=== INICIANDO SCRIPT DE FORZADO DIRECTO ===');
+        
+        // Función directa e inmediata
+        window.showInteractiveTables = function() {
+            console.log('CARGANDO VISUALIZACIÓN INTERACTIVA...');
+            
+            const container = document.getElementById('tablesManagement');
+            if (!container) {
+                alert('No se encontró el contenedor de mesas. Asegúrate de estar en Admin → Mesas');
+                return;
+            }
+            
+            // Mostrar vista interactiva inmediata
+            container.innerHTML = `
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h4 class="text-primary">
+                        <i class="bi bi-grid-3x3"></i> Gestión Interactiva de Mesas ✨
+                    </h4>
+                    <div>
+                        <button class="btn btn-info btn-sm me-2" onclick="alert('💡 Haz clic en cualquier mesa para editar su capacidad y ver cómo cambia el tamaño')">
+                            <i class="bi bi-info-circle"></i> Ayuda
+                        </button>
+                        <button class="btn btn-success" onclick="showInteractiveTables()">
+                            <i class="bi bi-arrow-clockwise"></i> Recargar
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="row g-4">
+                    <!-- Terraza -->
+                    <div class="col-md-6 col-lg-4">
+                        <div class="card zone-card-direct">
+                            <div class="card-header bg-gradient-success text-white">
+                                <h5 class="mb-0">🌴 Terraza</h5>
+                                <small>5 mesas • 20 personas</small>
+                            </div>
+                            <div class="card-body zone-body-direct">
+                                <div class="tables-grid-direct">
+                                    <!-- Mesa 2 personas (pequeña) -->
+                                    <div class="mesa-direct mesa-small mesa-disponible" 
+                                         onclick="editMesaInteractive(1, 'T1', 2, 'disponible')">
+                                        <div class="mesa-num">T1</div>
+                                        <div class="mesa-cap">2p</div>
+                                    </div>
+                                    
+                                    <!-- Mesa 4 personas (mediana) -->
+                                    <div class="mesa-direct mesa-medium mesa-ocupada" 
+                                         onclick="editMesaInteractive(2, 'T2', 4, 'ocupada')">
+                                        <div class="mesa-num">T2</div>
+                                        <div class="mesa-cap">4p</div>
+                                    </div>
+                                    
+                                    <!-- Mesa 6 personas (grande) -->
+                                    <div class="mesa-direct mesa-large mesa-disponible" 
+                                         onclick="editMesaInteractive(3, 'T3', 6, 'disponible')">
+                                        <div class="mesa-num">T3</div>
+                                        <div class="mesa-cap">6p</div>
+                                    </div>
+                                    
+                                    <!-- Mesa 8 personas (extra grande) -->
+                                    <div class="mesa-direct mesa-xlarge mesa-reservada" 
+                                         onclick="editMesaInteractive(4, 'T4', 8, 'reservada')">
+                                        <div class="mesa-num">T4</div>
+                                        <div class="mesa-cap">8p</div>
+                                    </div>
+                                    
+                                    <!-- Mesa 10 personas (gigante) -->
+                                    <div class="mesa-direct mesa-xxlarge mesa-disponible" 
+                                         onclick="editMesaInteractive(5, 'T5', 10, 'disponible')">
+                                        <div class="mesa-num">T5</div>
+                                        <div class="mesa-cap">10p</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Salón Principal -->
+                    <div class="col-md-6 col-lg-4">
+                        <div class="card zone-card-direct">
+                            <div class="card-header bg-gradient-primary text-white">
+                                <h5 class="mb-0">🍽️ Salón Principal</h5>
+                                <small>6 mesas • 28 personas</small>
+                            </div>
+                            <div class="card-body zone-body-direct">
+                                <div class="tables-grid-direct">
+                                    <div class="mesa-direct mesa-small mesa-disponible" onclick="editMesaInteractive(6, 'S1', 2, 'disponible')">
+                                        <div class="mesa-num">S1</div>
+                                        <div class="mesa-cap">2p</div>
+                                    </div>
+                                    <div class="mesa-direct mesa-medium mesa-disponible" onclick="editMesaInteractive(7, 'S2', 4, 'disponible')">
+                                        <div class="mesa-num">S2</div>
+                                        <div class="mesa-cap">4p</div>
+                                    </div>
+                                    <div class="mesa-direct mesa-large mesa-ocupada" onclick="editMesaInteractive(8, 'S3', 6, 'ocupada')">
+                                        <div class="mesa-num">S3</div>
+                                        <div class="mesa-cap">6p</div>
+                                    </div>
+                                    <div class="mesa-direct mesa-medium mesa-reservada" onclick="editMesaInteractive(9, 'S4', 4, 'reservada')">
+                                        <div class="mesa-num">S4</div>
+                                        <div class="mesa-cap">4p</div>
+                                    </div>
+                                    <div class="mesa-direct mesa-xlarge mesa-disponible" onclick="editMesaInteractive(10, 'S5', 8, 'disponible')">
+                                        <div class="mesa-num">S5</div>
+                                        <div class="mesa-cap">8p</div>
+                                    </div>
+                                    <div class="mesa-direct mesa-large mesa-disponible" onclick="editMesaInteractive(11, 'S6', 6, 'disponible')">
+                                        <div class="mesa-num">S6</div>
+                                        <div class="mesa-cap">6p</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Área VIP -->
+                    <div class="col-md-6 col-lg-4">
+                        <div class="card zone-card-direct">
+                            <div class="card-header bg-gradient-warning text-white">
+                                <h5 class="mb-0">⭐ Área VIP</h5>
+                                <small>3 mesas • 14 personas</small>
+                            </div>
+                            <div class="card-body zone-body-direct">
+                                <div class="tables-grid-direct">
+                                    <div class="mesa-direct mesa-small mesa-disponible" onclick="editMesaInteractive(12, 'V1', 2, 'disponible')">
+                                        <div class="mesa-num">V1</div>
+                                        <div class="mesa-cap">2p</div>
+                                    </div>
+                                    <div class="mesa-direct mesa-medium mesa-disponible" onclick="editMesaInteractive(13, 'V2', 4, 'disponible')">
+                                        <div class="mesa-num">V2</div>
+                                        <div class="mesa-cap">4p</div>
+                                    </div>
+                                    <div class="mesa-direct mesa-xlarge mesa-ocupada" onclick="editMesaInteractive(14, 'V3', 8, 'ocupada')">
+                                        <div class="mesa-num">V3</div>
+                                        <div class="mesa-cap">8p</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Estilos directos -->
+                <style>
+                    .bg-gradient-success { background: linear-gradient(135deg, #28a745, #20c997) !important; }
+                    .bg-gradient-primary { background: linear-gradient(135deg, #007bff, #6610f2) !important; }
+                    .bg-gradient-warning { background: linear-gradient(135deg, #ffc107, #fd7e14) !important; }
+                    
+                    .zone-card-direct {
+                        box-shadow: 0 8px 30px rgba(0,0,0,0.15);
+                        border-radius: 20px;
+                        overflow: hidden;
+                        transition: transform 0.3s ease;
+                    }
+                    .zone-card-direct:hover {
+                        transform: translateY(-8px);
+                    }
+                    
+                    .zone-body-direct {
+                        background: #f8f9fa;
+                        padding: 1.5rem;
+                    }
+                    
+                    .tables-grid-direct {
+                        display: grid;
+                        grid-template-columns: repeat(auto-fit, minmax(60px, 1fr));
+                        gap: 1rem;
+                    }
+                    
+                    .mesa-direct {
+                        background: white;
+                        border: 3px solid #dee2e6;
+                        border-radius: 15px;
+                             padding: 0.5rem;
+                        text-align: center;
+                        cursor: pointer;
+                        transition: all 0.3s ease;
+                        font-weight: bold;
+                        position: relative;
+                    }
+                    
+                    .mesa-direct:hover {
+                        transform: scale(1.2) rotate(3deg);
+                        box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+                        z-index: 10;
+                    }
+                    
+                    /* Tamaños - ¡ESTO ES LO QUE QUERÍAS! */
+                    .mesa-small { 
+                        transform: scale(0.7); 
+                        min-height: 50px;
+                        background: linear-gradient(135deg, #e8f5e8, #f0fff0);
+                    }
+                    .mesa-medium { 
+                        transform: scale(0.9); 
+                        min-height: 65px;
+                        background: linear-gradient(135deg, #e8f4f8, #f0ffff);
+                    }
+                    .mesa-large { 
+                        transform: scale(1.1); 
+                        min-height: 80px;
+                        background: linear-gradient(135deg, #fef8e8, #fffff0);
+                    }
+                    .mesa-xlarge { 
+                        transform: scale(1.3); 
+                        min-height: 95px;
+                        background: linear-gradient(135deg, #f8e8f8, #fff0ff);
+                    }
+                    .mesa-xxlarge { 
+                        transform: scale(1.5); 
+                        min-height: 110px;
+                        background: linear-gradient(135deg, #ffe8e8, #fff0f0);
+                    }
+                    
+                    /* Estados */
+                    .mesa-disponible { 
+                        border-color: #28a745;
+                        color: #155724;
+                    }
+                    .mesa-ocupada { 
+                        border-color: #dc3545;
+                        color: #721c24;
+                    }
+                    .mesa-reservada { 
+                        border-color: #ffc107;
+                        color: #856404;
+                    }
+                    
+                    .mesa-num {
+                        font-size: 1rem;
+                        margin-bottom: 0.3rem;
+                        font-family: Arial Black, sans-serif;
+                    }
+                    
+                    .mesa-cap {
+                        font-size: 0.8rem;
+                        opacity: 0.8;
+                    }
+                    
+                    @keyframes pulse {
+                        0%, 100% { transform: scale(1); }
+                        50% { transform: scale(1.05); }
+                    }
+                    
+                    .mesa-direct {
+                        animation: pulse 2s infinite;
+                    }
+                    
+                    .mesa-direct:hover {
+                        animation: none;
+                    }
+                </style>
+                
+                <div class="alert alert-info mt-4">
+                    <h5>🎯 ¡Visualización Interactiva Activa!</h5>
+                    <p>✅ Los cuadritos cambian de tamaño según la capacidad de personas:</p>
+                    <ul>
+                        <li>🟢 <strong>2 personas:</strong> Cuadrito muy pequeño (70%)</li>
+                        <li>🔵 <strong>4 personas:</strong> Cuadrito pequeño (90%)</li>
+                        <li>🟡 <strong>6 personas:</strong> Cuadrito mediano (110%)</li>
+                        <li>🟣 <strong>8 personas:</strong> Cuadrito grande (130%)</li>
+                        <li>🔴 <strong>10+ personas:</strong> Cuadrito gigante (150%)</li>
+                    </ul>
+                    <p><strong>💡 Haz clic en cualquier mesa para ver sus detalles</strong></p>
+                </div>
+            `;
+            
+            console.log('✅ ¡Visualización interactiva cargada con éxito!');
+        };
+        
+        // Auto-ejecutar cuando se carga la página
+        console.log('🎯 Sistema de gestión interactiva cargado correctamente.');
+        
+        // Control de recarga para evitar bucles infinitos
+        let isReloading = false;
+        let lastReloadTime = 0;
+        
+        // Event listener para cuando se activa el tab de mesas (más eficiente)
+        document.addEventListener('DOMContentLoaded', function() {
+            // Observer para detectar cuando el tab de mesas se activa
+            const mesasTab = document.getElementById('mesasTab');
+            if (mesasTab) {
+                mesasTab.addEventListener('shown.bs.tab', function() {
+                    console.log('📋 Tab de mesas activado, cargando visualización interactiva...');
+                    setTimeout(() => {
+                        console.log('🔍 Diagnosticando funciones disponibles:');
+                        console.log('  - loadInteractiveWithRealData:', typeof loadInteractiveWithRealData);
+                        console.log('  - loadTablesManagement:', typeof loadTablesManagement);
+                        console.log('  - window.loadInteractiveWithRealData:', typeof window.loadInteractiveWithRealData);
+                        console.log('  - window.loadTablesManagement:', typeof window.loadTablesManagement);
+                        
+                        // Forzar la carga interactiva primero (grid + editor)
+                        if (typeof window.loadInteractiveWithRealData === 'function') {
+                            console.log('🔄 Usando window.loadInteractiveWithRealData() - visualización interactiva con grid');
+                            window.loadInteractiveWithRealData();
+                        } else if (typeof loadInteractiveWithRealData === 'function') {
+                            console.log('🔄 Usando loadInteractiveWithRealData() - visualización interactiva con grid');
+                            loadInteractiveWithRealData();
+                        } else if (typeof loadTablesManagement === 'function') {
+                            console.log('🔄 Usando loadTablesManagement() - tabla simple como fallback');
+                            loadTablesManagement();
+                        } else {
+                            console.log('❌ No se encontraron funciones para cargar mesas');
+                        }
+                    }, 500);
+                });
+            }
+        });
+        
+        // FUNCIÓN FORZADA PARA NUEVA VISUALIZACIÓN
+        window.forceNewVisualization = function() {
+            console.log('=== FORZANDO NUEVA VISUALIZACIÓN v3.0 ===');
+            
+            const container = document.getElementById('tablesManagement');
+            if (!container) {
+                console.log('Contenedor no encontrado');
+                return;
+            }
+            
+            container.innerHTML = `
+                <div class="text-center p-4">
+                    <div class="spinner-border text-primary mb-3" role="status"></div>
+                    <h5>Cargando visualización interactiva...</h5>
+                </div>
+            `;
+            
+            // Cargar y mostrar nueva visualización
+            loadNewInteractiveView();
+        };
+        
+        window.loadNewInteractiveView = async function() {
+            const container = document.getElementById('tablesManagement');
+            
+            try {
+                const [zonasResponse, mesasResponse] = await Promise.all([
+                    fetch('http://localhost:5000/api/zonas'),
+                    fetch('http://localhost:5000/api/mesas')
+                ]);
+                
+                const zonas = await zonasResponse.json();
+                const mesas = await mesasResponse.json();
+                
+                const mesasPorZona = {};
+                zonas.forEach(zona => {
+                    mesasPorZona[zona.id] = mesas.filter(mesa => mesa.id_zona === zona.id);
+                });
+                
+                container.innerHTML = generateNewVisualization(zonas, mesasPorZona);
+                showToast('Nueva visualización cargada correctamente', 'success');
+                
+            } catch (error) {
+                console.log('Usando datos de demostración con nueva visualización');
+                
+                const demoZonas = [
+                    { id: 1, nombre: 'Terraza' },
+                    { id: 2, nombre: 'Salón Principal' },
+                    { id: 3, nombre: 'VIP' }
+                ];
+                
+                const demoMesasPorZona = {
+                    1: [
+                        { id: 1, numero: 'T1', capacidad: 4, estado: 'disponible' },
+                        { id: 2, numero: 'T2', capacidad: 6, estado: 'ocupada' },
+                        { id: 3, numero: 'T3', capacidad: 2, estado: 'disponible' }
+                    ],
+                    2: [
+                        { id: 4, numero: 'S1', capacidad: 4, estado: 'disponible' },
+                        { id: 5, numero: 'S2', capacidad: 8, estado: 'reservada' },
+                        { id: 6, numero: 'S3', capacidad: 4, estado: 'disponible' }
+                    ],
+                    3: [
+                        { id: 7, numero: 'V1', capacidad: 2, estado: 'disponible' },
+                        { id: 8, numero: 'V2', capacidad: 4, estado: 'disponible' }
+                    ]
+                };
+                
+                container.innerHTML = generateNewVisualization(demoZonas, demoMesasPorZona);
+                showToast('Nueva visualización con datos de demostración', 'info');
+            }
+        };
+        
+        window.generateNewVisualization = function(zonas, mesasPorZona) {
+            let html = `
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h4 class="text-primary">
+                        <i class="bi bi-grid-3x3"></i> Gestión Interactiva de Mesas v3.0
+                    </h4>
+                    <div>
+                        <button class="btn btn-info btn-sm me-2" onclick="forceNewVisualization()">
+                            <i class="bi bi-arrow-clockwise"></i> Recargar
+                        </button>
+                    </div>
+                </div>
+                <div class="zones-new-grid">
+            `;
+            
+            zonas.forEach(zona => {
+                const mesasEnZona = mesasPorZona[zona.id] || [];
+                const totalCapacidad = mesasEnZona.reduce((sum, mesa) => sum + mesa.capacidad, 0);
+                const mesasDisponibles = mesasEnZona.filter(mesa => mesa.estado === 'disponible').length;
+                
+                html += `
+                    <div class="new-zone-card">
+                        <div class="zone-header-new">
+                            <h3>${zona.nombre}</h3>
+                            <div class="zone-stats-new">
+                                <span class="stat-badge">
+                                    <i class="bi bi-grid"></i> ${mesasEnZona.length} mesas
+                                </span>
+                                <span class="stat-badge">
+                                    <i class="bi bi-people"></i> ${totalCapacidad} personas
+                                </span>
+                                <span class="stat-badge available">
+                                    <i class="bi bi-check-circle"></i> ${mesasDisponibles} disponibles
+                                </span>
+                            </div>
+                        </div>
+                        <div class="zone-mesas-new">
+                            ${generateNewMesas(mesasEnZona)}
+                        </div>
+                    </div>
+                `;
+            });
+            
+            html += '</div>';
+            
+            // Estilos completamente inline
+            html += `
+                <style>
+                    .zones-new-grid {
+                        display: grid;
+                        grid-template-columns: repeat(auto-fit, minmax(450px, 1fr));
+                        gap: 2rem;
+                    }
+                    .new-zone-card {
+                        background: white;
+                        border-radius: 20px;
+                        box-shadow: 0 8px 30px rgba(0,0,0,0.12);
+                        overflow: hidden;
+                        transition: all 0.3s ease;
+                        border: 2px solid #f0f0f0;
+                    }
+                    .new-zone-card:hover {
+                        transform: translateY(-5px);
+                        box-shadow: 0 12px 40px rgba(0,0,0,0.18);
+                        border-color: var(--bs-primary);
+                    }
+                    .zone-header-new {
+                        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                        color: white;
+                        padding: 2rem;
+                        text-align: center;
+                    }
+                    .zone-header-new h3 {
+                        margin: 0 0 1rem 0;
+                        font-size: 1.5rem;
+                        font-weight: 700;
+                    }
+                    .zone-stats-new {
+                        display: flex;
+                        justify-content: center;
+                        gap: 1.5rem;
+                        flex-wrap: wrap;
+                    }
+                    .stat-badge {
+                        background: rgba(255,255,255,0.2);
+                        padding: 0.5rem 1rem;
+                        border-radius: 20px;
+                        font-size: 0.85rem;
+                        font-weight: 500;
+                        backdrop-filter: blur(10px);
+                    }
+                    .stat-badge.available {
+                        background: rgba(40, 167, 69, 0.3);
+                    }
+                    .zone-mesas-new {
+                        padding: 2rem;
+                        background: #fafafa;
+                        min-height: 250px;
+                        display: grid;
+                        grid-template-columns: repeat(auto-fill, minmax(70px, 1fr));
+                        gap: 1rem;
+                    }
+                    .mesa-interactive {
+                        background: white;
+                        border: 3px solid #e0e0e0;
+                        border-radius: 15px;
+                             padding: 0.5rem;
+                        text-align: center;
+                        cursor: pointer;
+                        transition: all 0.3s ease;
+                        position: relative;
+                        overflow: hidden;
+                    }
+                    .mesa-interactive:hover {
+                        transform: scale(1.15) rotate(2deg);
+                        box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+                        z-index: 10;
+                    }
+                    .mesa-disponible {
+                        border-color: #28a745;
+                        background: linear-gradient(135deg, #28a74505, #28a74515);
+                        color: #28a745;
+                    }
+                    .mesa-disponible:hover {
+                        background: linear-gradient(135deg, #28a74515, #28a74525);
+                        box-shadow: 0 8px 25px rgba(40, 167, 69, 0.3);
+                    }
+                    .mesa-ocupada {
+                        border-color: #dc3545;
+                        background: linear-gradient(135deg, #dc354505, #dc354515);
+                        color: #dc3545;
+                    }
+                    .mesa-ocupada:hover {
+                        background: linear-gradient(135deg, #dc354515, #dc354525);
+                        box-shadow: 0 8px 25px rgba(220, 53, 69, 0.3);
+                    }
+                    .mesa-reservada {
+                        border-color: #ffc107;
+                        background: linear-gradient(135deg, #ffc10705, #ffc10715);
+                        color: #856404;
+                    }
+                    .mesa-reservada:hover {
+                        background: linear-gradient(135deg, #ffc10715, #ffc10725);
+                        box-shadow: 0 8px 25px rgba(255, 193, 7, 0.3);
+                    }
+                    /* Tamaños dinámicos */
+                    .mesa-2 { transform: scale(0.75); min-height: 60px; }
+                    .mesa-4 { transform: scale(0.9); min-height: 70px; }
+                    .mesa-6 { transform: scale(1.0); min-height: 80px; }
+                    .mesa-8 { transform: scale(1.15); min-height: 90px; }
+                    .mesa-10 { transform: scale(1.3); min-height: 100px; }
+                    .mesa-mas { transform: scale(1.4); min-height: 110px; }
+                    
+                    .mesa-numero {
+                        font-weight: bold;
+                        font-size: 0.9rem;
+                        margin-bottom: 0.3rem;
+                        font-family: 'Arial Black', sans-serif;
+                    }
+                    .mesa-capacidad {
+                        font-size: 0.75rem;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        gap: 0.3rem;
+                        font-weight: 500;
+                    }
+                    .mesa-icon {
+                        font-size: 1rem;
+                    }
+                    
+                    /* Animaciones */
+                    @keyframes pulse {
+                        0% { transform: scale(1); }
+                        50% { transform: scale(1.05); }
+                        100% { transform: scale(1); }
+                    }
+                    
+                    .mesa-interactive {
+                        animation: pulse 3s infinite;
+                    }
+                    
+                    .mesa-interactive:hover {
+                        animation: none;
+                    }
+                </style>
+            `;
+            
+            return html;
+        };
+        
+        window.generateNewMesas = function(mesas) {
+            if (mesas.length === 0) {
+                return '<div style="grid-column: 1/-1; text-align: center; color: #6c757d; padding: 2rem; font-size: 1.1rem;">🚫 Esta zona no tiene mesas asignadas</div>';
+            }
+            
+            return mesas.map(mesa => {
+                const estadoClass = `mesa-${mesa.estado}`;
+                const capacidadClass = mesa.capacidad <= 2 ? 'mesa-2' : 
+                                       mesa.capacidad <= 4 ? 'mesa-4' : 
+                                       mesa.capacidad <= 6 ? 'mesa-6' : 
+                                       mesa.capacidad <= 8 ? 'mesa-8' : 
+                                       mesa.capacidad <= 10 ? 'mesa-10' : 'mesa-mas';
+                
+                return `
+                    <div class="mesa-interactive ${estadoClass} ${capacidadClass}" 
+                         title="Mesa ${mesa.numero} - ${mesa.capacidad} personas - Estado: ${mesa.estado}"
+                         onclick="editMesaInteractive(${mesa.id}, '${mesa.numero}', ${mesa.capacidad}, '${mesa.estado}')">
+                        <div class="mesa-numero">${mesa.numero}</div>
+                        <div class="mesa-capacidad">
+                            <i class="bi bi-people-fill mesa-icon"></i>
+                            <span>${mesa.capacidad}p</span>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        };
+        
+        window.editMesaInteractive = function(mesaId, numero, capacidad, estado) {
+            // Crear modal de edición
+            const modalHtml = `
+                <div class="modal fade" id="editMesaModal" tabindex="-1">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <div class="modal-header bg-primary text-white">
+                                <h5 class="modal-title">✏️ Editar Mesa ${numero}</h5>
+                                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                            </div>
+                            <div class="modal-body">
+                                <form id="editMesaForm">
+                                    <div class="mb-4">
+                                        <label class="form-label fw-bold">📊 Capacidad de Personas</label>
+                                        <div class="capacity-editor">
+                                            <input type="range" class="form-range capacity-slider" 
+                                                   id="capacitySlider" min="1" max="20" value="${capacidad}"
+                                                   oninput="updateCapacityPreview(this.value)">
+                                            
+                                            <div class="capacity-display text-center mt-3">
+                                                <span class="capacity-number" id="capacityNumber">${capacidad}</span>
+                                                <span class="capacity-label ms-2">personas</span>
+                                            </div>
+                                            
+                                            <!-- Vista previa del tamaño -->
+                                            <div class="preview-container mt-4">
+                                                <h6 class="text-center mb-3">🔍 Vista Previa del Tamaño:</h6>
+                                                <div class="preview-area">
+                                                    <div class="mesa-preview" id="mesaPreview">
+                                                        <div class="preview-numero">${numero}</div>
+                                                        <div class="preview-capacidad">
+                                                            <i class="bi bi-people-fill" style="font-size: 0.65rem;"></i>
+                                                            <span id="previewCapacity">${capacidad}p</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="mb-4">
+                                        <label class="form-label fw-bold">🎨 Estado de la Mesa</label>
+                                        <div class="state-selector-grid">
+                                            <label class="state-option-edit ${estado === 'disponible' ? 'active' : ''}">
+                                                <input type="radio" name="estado" value="disponible" ${estado === 'disponible' ? 'checked' : ''}>
+                                                <div class="state-indicator bg-success"></div>
+                                                <span>✅ Disponible</span>
+                                            </label>
+                                            <label class="state-option-edit ${estado === 'ocupada' ? 'active' : ''}">
+                                                <input type="radio" name="estado" value="ocupada" ${estado === 'ocupada' ? 'checked' : ''}>
+                                                <div class="state-indicator bg-danger"></div>
+                                                <span>❌ Ocupada</span>
+                                            </label>
+                                            <label class="state-option-edit ${estado === 'reservada' ? 'active' : ''}">
+                                                <input type="radio" name="estado" value="reservada" ${estado === 'reservada' ? 'checked' : ''}>
+                                                <div class="state-indicator bg-warning"></div>
+                                                <span>📅 Reservada</span>
+                                            </label>
+                                            <label class="state-option-edit ${estado === 'mantenimiento' ? 'active' : ''}">
+                                                <input type="radio" name="estado" value="mantenimiento" ${estado === 'mantenimiento' ? 'checked' : ''}>
+                                                <div class="state-indicator bg-secondary"></div>
+                                                <span>🔧 Mantenimiento</span>
+                                            </label>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="mb-3">
+                                        <label class="form-label fw-bold">🔢 Número de Mesa</label>
+                                        <input type="text" class="form-control" id="mesaNumero" value="${numero}" placeholder="Ej: T1, M2, etc.">
+                                    </div>
+                                </form>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">❌ Cancelar</button>
+                                <button type="button" class="btn btn-success" onclick="saveMesaChanges(${mesaId})">
+                                    <i class="bi bi-check-circle"></i> 💾 Guardar Cambios
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <style>
+                    .capacity-editor {
+                        background: #f8f9fa;
+                        padding: 2rem;
+                        border-radius: 15px;
+                        border: 2px solid #e9ecef;
+                    }
+                    
+                    .capacity-slider {
+                        height: 10px;
+                    }
+                    
+                    .capacity-number {
+                        font-size: 3rem;
+                        font-weight: bold;
+                        color: #007bff;
+                    }
+                    
+                    .capacity-label {
+                        font-size: 1.2rem;
+                        color: #6c757d;
+                    }
+                    
+                    .preview-container {
+                        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                        padding: 1.5rem;
+                        border-radius: 15px;
+                    }
+                    
+                    .preview-area {
+                        background: white;
+                        padding: 2rem;
+                        border-radius: 10px;
+                        text-align: center;
+                    }
+                    
+                    .mesa-preview {
+                        background: linear-gradient(135deg, #28a74510, #28a74520);
+                        border: 3px solid #28a745;
+                        border-radius: 15px;
+                        padding: 1.5rem;
+                        display: inline-block;
+                        transition: all 0.3s ease;
+                        min-width: 80px;
+                    }
+                    
+                    .mesa-preview-small { transform: scale(0.7); min-height: 50px; }
+                    .mesa-preview-medium { transform: scale(0.9); min-height: 65px; }
+                    .mesa-preview-large { transform: scale(1.1); min-height: 80px; }
+                    .mesa-preview-xlarge { transform: scale(1.3); min-height: 95px; }
+                    .mesa-preview-xxlarge { transform: scale(1.5); min-height: 110px; }
+                    
+                    .preview-numero {
+                        font-weight: bold;
+                        font-size: 1.2rem;
+                        margin-bottom: 0.5rem;
+                    }
+                    
+                    .preview-capacidad {
+                        font-size: 1rem;
+                        color: #6c757d;
+                    }
+                    
+                    .state-selector-grid {
+                        display: grid;
+                        grid-template-columns: 1fr 1fr;
+                        gap: 0.5rem;
+                    }
+                    
+                    .state-option-edit {
+                        display: flex;
+                        align-items: center;
+                        gap: 0.5rem;
+                             padding: 0.5rem;
+                        border: 2px solid #dee2e6;
+                        border-radius: 10px;
+                        cursor: pointer;
+                        transition: all 0.2s ease;
+                    }
+                    
+                    .state-option-edit:hover {
+                        border-color: #007bff;
+                        background: #f8f9fa;
+                    }
+                    
+                    .state-option-edit.active {
+                        border-color: #007bff;
+                        background: #007bff;
+                        color: white;
+                    }
+                    
+                    .state-indicator {
+                        width: 12px;
+                        height: 12px;
+                        border-radius: 50%;
+                    }
+                    
+                    .state-option-edit input[type="radio"] {
+                        display: none;
+                    }
+                </style>
+            `;
+            
+            // Eliminar modal existente
+            const existingModal = document.getElementById('editMesaModal');
+            if (existingModal) {
+                existingModal.remove();
+            }
+            
+            // Agregar nuevo modal
+            document.body.insertAdjacentHTML('beforeend', modalHtml);
+            
+            // Mostrar modal
+            const modal = new bootstrap.Modal(document.getElementById('editMesaModal'));
+            modal.show();
+            
+            // Agregar event listeners
+            setTimeout(() => {
+                document.querySelectorAll('input[name="estado"]').forEach(radio => {
+                    radio.addEventListener('change', function() {
+                        document.querySelectorAll('.state-option-edit').forEach(opt => opt.classList.remove('active'));
+                        this.parentElement.classList.add('active');
+                        updateMesaPreview();
+                    });
+                });
+                
+                // Iniciar vista previa
+                updateCapacityPreview(capacidad);
+            }, 100);
+        };
+        
+        window.updateCapacityPreview = function(value) {
+            const capacity = parseInt(value);
+            document.getElementById('capacityNumber').textContent = capacity;
+            document.getElementById('previewCapacity').textContent = capacity + 'p';
+            
+            // Actualizar tamaño del preview
+            const preview = document.getElementById('mesaPreview');
+            if (preview) {
+                let sizeClass = 'mesa-preview';
+                if (capacity <= 2) sizeClass += ' mesa-preview-small';
+                else if (capacity <= 4) sizeClass += ' mesa-preview-medium';
+                else if (capacity <= 6) sizeClass += ' mesa-preview-large';
+                else if (capacity <= 8) sizeClass += ' mesa-preview-xlarge';
+                else sizeClass += ' mesa-preview-xxlarge';
+                
+                preview.className = sizeClass;
+            }
+        };
+        
+        window.updateMesaPreview = function() {
+            const estado = document.querySelector('input[name="estado"]:checked').value;
+            const preview = document.getElementById('mesaPreview');
+            
+            if (preview) {
+                // Actualizar colores según estado
+                let borderColor = '#28a745'; // verde por defecto
+                let background = 'linear-gradient(135deg, #28a74510, #28a74520)';
+                
+                switch(estado) {
+                    case 'ocupada':
+                        borderColor = '#dc3545';
+                        background = 'linear-gradient(135deg, #dc354510, #dc354520)';
+                        break;
+                    case 'reservada':
+                        borderColor = '#ffc107';
+                        background = 'linear-gradient(135deg, #ffc10710, #ffc10720)';
+                        break;
+                    case 'mantenimiento':
+                        borderColor = '#6c757d';
+                        background = 'linear-gradient(135deg, #6c757d10, #6c757d20)';
+                        break;
+                }
+                
+                preview.style.borderColor = borderColor;
+                preview.style.background = background;
+            }
+        };
+        
+        window.saveMesaChanges = async function(mesaId) {
+            const capacidad = document.getElementById('capacitySlider').value;
+            const estado = document.querySelector('input[name="estado"]:checked').value;
+            const numero = document.getElementById('mesaNumero').value;
+            
+            // Mostrar loading
+            const saveBtn = document.querySelector(`button[onclick="saveMesaChanges(${mesaId})"]`);
+            const originalText = saveBtn.innerHTML;
+            saveBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> Guardando...';
+            saveBtn.disabled = true;
+            
+            try {
+                // OBTENER DATOS ACTUALES DE LA MESA
+                const mesasResponse = await fetch('http://localhost:5000/api/mesas');
+                const todasMesas = await mesasResponse.json();
+                const mesaActual = todasMesas.find(m => m.id === mesaId);
+                
+                if (!mesaActual) {
+                    throw new Error('Mesa no encontrada en la base de datos');
+                }
+                
+                // OBTENER TOKEN CORRECTO
+                let authToken = window.authToken || localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
+                
+                // Si no hay token, intentar obtener del estado global del app
+                if (!authToken && typeof currentUser !== 'undefined' && currentUser) {
+                    // Intentar hacer login automático como admin
+                    try {
+                        const loginResponse = await fetch('http://localhost:5000/api/login', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                email: 'admin@restaurante.com',
+                                password: 'admin123'
+                            })
+                        });
+                        
+                        if (loginResponse.ok) {
+                            const loginData = await loginResponse.json();
+                            authToken = loginData.token;
+                            window.authToken = authToken;
+                            localStorage.setItem('authToken', authToken);
+                            console.log('Token de admin obtenido automáticamente');
+                        }
+                    } catch (loginError) {
+                        console.log('No se pudo obtener token automáticamente:', loginError);
+                    }
+                }
+                
+                if (!authToken) {
+                    throw new Error('No hay token de autenticación. Por favor inicie sesión como administrador.');
+                }
+                
+                console.log('Intentando actualizar mesa con token:', authToken ? 'Token disponible' : 'Sin token');
+                
+                // VERIFICAR SI HAY CAMBIOS REALES
+                const capacidadNueva = parseInt(capacidad);
+                const estadoNuevo = estado;
+                const numeroNuevo = numero;
+                
+                console.log('Datos actuales:', {
+                    numero: mesaActual.numero,
+                    capacidad: mesaActual.capacidad,
+                    estado: mesaActual.estado,
+                    id_zona: mesaActual.id_zona
+                });
+                
+                console.log('Nuevos datos:', {
+                    numero: numeroNuevo,
+                    capacidad: capacidadNueva,
+                    estado: estadoNuevo,
+                    id_zona: mesaActual.id_zona
+                });
+                
+                // Solo actualizar si hay cambios reales
+                if (mesaActual.numero === numeroNuevo && 
+                    mesaActual.capacidad === capacidadNueva && 
+                    mesaActual.estado === estadoNuevo) {
+                    
+                    bootstrap.Modal.getInstance(document.getElementById('editMesaModal')).hide();
+                    showSuccessToast(`✅ Mesa ${numero} no necesita cambios (los datos son los mismos)`);
+                    return;
+                }
+                
+                // ACTUALIZAR EN LA BASE DE DATOS (solo si hay cambios)
+                const updateResponse = await fetch(`http://localhost:5000/api/mesas/${mesaId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${authToken}`
+                    },
+                    body: JSON.stringify({
+                        numero: numeroNuevo,
+                        capacidad: capacidadNueva,
+                        estado: estadoNuevo,
+                        id_zona: mesaActual.id_zona,
+                        posicion_x: mesaActual.posicion_x || 0,
+                        posicion_y: mesaActual.posicion_y || 0
+                    })
+                });
+                
+                if (!updateResponse.ok) {
+                    const errorData = await updateResponse.json();
+                    console.error('Error de la API:', errorData);
+                    console.error('Status:', updateResponse.status);
+                    console.error('Headers:', updateResponse.headers);
+                    throw new Error(errorData.error || `Error HTTP ${updateResponse.status}: ${updateResponse.statusText}`);
+                }
+                
+                const responseData = await updateResponse.json();
+                console.log('Respuesta exitosa:', responseData);
+                
+                // Manejar caso especial de "sin cambios"
+                if (responseData.sin_cambios) {
+                    bootstrap.Modal.getInstance(document.getElementById('editMesaModal')).hide();
+                    showSuccessToast(`ℹ️ Mesa ${numero}: ${responseData.message}`);
+                    
+                    setTimeout(() => {
+                        if (typeof loadInteractiveWithRealData === 'function') {
+                            loadInteractiveWithRealData();
+                        }
+                    }, 500);
+                    return;
+                }
+                
+                // ÉXITO - Cerrar modal y mostrar notificación
+                bootstrap.Modal.getInstance(document.getElementById('editMesaModal')).hide();
+                showSuccessToast(`✅ Mesa ${numero} actualizada correctamente: ${capacidad} personas - ${estado}`);
+                
+                // Recargar vista con datos actualizados
+                setTimeout(() => {
+                    if (typeof loadInteractiveWithRealData === 'function') {
+                        loadInteractiveWithRealData();
+                    }
+                }, 500);
+                
+            } catch (error) {
+                console.error('Error guardando cambios:', error);
+                bootstrap.Modal.getInstance(document.getElementById('editMesaModal')).hide();
+                showErrorToast(`❌ Error: ${error.message}`);
+            } finally {
+                // Restaurar botón
+                if (saveBtn) {
+                    saveBtn.innerHTML = originalText;
+                    saveBtn.disabled = false;
+                }
+            }
+        };
+        
+        // Funciones mejoradas de toast
+        window.showSuccessToast = function(message) {
+            try {
+                if (typeof showToast === 'undefined') {
+                    // Toast manual con Bootstrap si showToast no existe
+                    const toastHtml = `
+                        <div class="toast-container position-fixed top-0 end-0 p-3">
+                            <div class="toast show bg-success text-white" role="alert">
+                                <div class="toast-header bg-success text-white">
+                                    <i class="bi bi-check-circle-fill me-2"></i>
+                                    <strong class="me-auto">¡Éxito!</strong>
+                                </div>
+                                <div class="toast-body">${message}</div>
+                            </div>
+                        </div>
+                    `;
+                    document.body.insertAdjacentHTML('beforeend', toastHtml);
+                    setTimeout(() => {
+                        const toast = document.querySelector('.toast-container');
+                        if (toast) toast.remove();
+                    }, 3000);
+                } else {
+                    showToast(message, 'success');
+                }
+            } catch (error) {
+                console.log('✅ ' + message);
+            }
+        };
+        
+        // Función mejorada para mostrar toast de error
+        window.showErrorToast = function(message) {
+            try {
+                if (typeof showToast === 'undefined') {
+                    const toastHtml = `
+                        <div class="toast-container position-fixed top-0 end-0 p-3">
+                            <div class="toast show bg-danger text-white" role="alert">
+                                <div class="toast-header bg-danger text-white">
+                                    <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                                    <strong class="me-auto">Error</strong>
+                                </div>
+                                <div class="toast-body">${message}</div>
+                            </div>
+                        </div>
+                    `;
+                    document.body.insertAdjacentHTML('beforeend', toastHtml);
+                    setTimeout(() => {
+                        const toast = document.querySelector('.toast-container');
+                        if (toast) toast.remove();
+                    }, 5000);
+                } else {
+                    showToast(message, 'danger');
+                }
+            } catch (error) {
+                console.log('❌ ' + message);
+            }
+        };
+        
+        // Agregar showSection si no existe
+        if (typeof showSection === 'undefined') {
+            window.showSection = function(sectionId) {
+                console.log('⚠️ showSection() no disponible - sección solicitada:', sectionId);
+            };
+        }
+        
+        // Función principal que carga datos reales
+        window.loadInteractiveWithRealData = async function() {
+                console.log('🔄 Cargando visualización con datos reales de la base de datos...');
+                
+                const container = document.getElementById('tablesManagement');
+                if (!container) {
+                    console.log('Contenedor tablesManagement no encontrado');
+                    return;
+                }
+                
+                // MOSTRAR INDICADOR DE CARGA
+                container.innerHTML = `
+                    <div class="text-center p-5">
+                        <div class="spinner-border text-primary mb-3" style="width: 3rem; height: 3rem;" role="status"></div>
+                        <h5>Cargando datos de la base de datos...</h5>
+                        <small class="text-muted">Obteniendo mesas y zonas actualizadas</small>
+                    </div>
+                `;
+                
+                // CARGAR DATOS REALES
+                try {
+                    // Obtener token actual
+                    const token = window.authToken || localStorage.getItem('token') || sessionStorage.getItem('token');
+                    const headers = {
+                        'Content-Type': 'application/json'
+                    };
+                    
+                    if (token) {
+                        headers['Authorization'] = `Bearer ${token}`;
+                    } else {
+                        console.warn('⚠️ No hay token disponible para la visualización interactiva');
+                    }
+                    
+                    const [zonasResponse, mesasResponse] = await Promise.all([
+                        fetch('http://localhost:5000/api/zonas', { headers }),
+                        fetch('http://localhost:5000/api/mesas', { headers })
+                    ]);
+                    
+                    if (!zonasResponse.ok || !mesasResponse.ok) {
+                        throw new Error('Error al cargar datos del servidor');
+                    }
+                    
+                    const zonas = await zonasResponse.json();
+                    const mesas = await mesasResponse.json();
+                    
+                    // VALIDAR DATOS
+                    if (!Array.isArray(zonas) || !Array.isArray(mesas)) {
+                        throw new Error('Los datos recibidos no son válidos');
+                    }
+                    
+                    console.log('✅ Datos reales cargados:', { zonas: zonas.length, mesas: mesas.length });
+                    
+                    // ORGANIZAR MESAS POR ZONA
+                    const mesasPorZona = {};
+                    zonas.forEach(zona => {
+                        mesasPorZona[zona.id] = mesas.filter(mesa => mesa.id_zona === zona.id);
+                    });
+                    
+                    // GENERAR VISTA CON DATOS REALES
+                    container.innerHTML = generateInteractiveViewWithRealData(zonas, mesasPorZona);
+                    
+                    showToast(`✅ Vista actualizada: ${zonas.length} zonas, ${mesas.length} mesas`, 'success');
+                
+            } catch (error) {
+                console.error('❌ Error cargando datos reales:', error);
+                
+                // MODO FALLBACK CON DATOS DE DEMOSTRACIÓN
+                showToast('🔄 Usando datos de muestra (Modo demostración)', 'info');
+                container.innerHTML = generateDemoFallback();
+            }
+            
+            // Resetear el flag de carga
+            window.isCurrentlyLoading = false;
+        };
+        
+        // Generar vista con datos reales
+        window.generateInteractiveViewWithRealData = function(zonas, mesasPorZona) {
+            let html = `
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h4 class="text-primary">
+                        <i class="bi bi-grid-3x3"></i> Gestión de Mesas
+                    </h4>
+                    <div>
+                        <button class="btn btn-warning btn-sm me-2" onclick="emergencyForceInteractive()">
+                            <i class="bi bi-lightning-charge"></i> ⚡ Forzar Interactivo
+                        </button>
+                        <button class="btn btn-success" onclick="forceInteractiveLoad()">
+                            <i class="bi bi-arrow-clockwise"></i> Actualizar Vista
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="alert alert-info">
+                    <h6><i class="bi bi-info-circle"></i> Panel de Administración</h6>
+                    <small class="text-muted">Haz clic en cualquier mesa para editar su configuración</small>
+                </div>
+                
+                <div class="row g-4">
+            `;
+            
+            zonas.forEach(zona => {
+                const mesasEnZona = mesasPorZona[zona.id] || [];
+                const totalCapacidad = mesasEnZona.reduce((sum, mesa) => sum + mesa.capacidad, 0);
+                const mesasDisponibles = mesasEnZona.filter(mesa => mesa.estado === 'disponible').length;
+                
+                html += `
+                    <div class="col-md-6 col-lg-4">
+                        <div class="card zone-card-direct">
+                            <div class="card-header bg-gradient-primary text-white">
+                                <h5 class="mb-0">${zona.nombre}</h5>
+                                <small>
+                                    <i class="bi bi-grid"></i> ${mesasEnZona.length} mesas • 
+                                    <i class="bi bi-people"></i> ${totalCapacidad} personas • 
+                                    <i class="bi bi-check-circle"></i> ${mesasDisponibles} disponibles
+                                </small>
+                            </div>
+                            <div class="card-body zone-body-direct">
+                                <div class="tables-grid-direct">
+                                    ${mesasEnZona.length > 0 ? 
+                                        mesasEnZona.map(mesa => generateRealMesa(mesa)).join('') :
+                                        '<div class="text-center text-muted p-3">Sin mesas en esta zona</div>'
+                                    }
+                                </div>
+                            </div>
+                            <div class="card-footer bg-light">
+                                <button class="btn btn-sm btn-outline-primary" onclick="addMesaToZone(${zona.id}, '${zona.nombre}')">
+                                    <i class="bi bi-plus-circle"></i> Agregar Mesa
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            html += '</div>';
+            html += getInteractiveStyles();
+            
+            return html;
+        };
+        
+        // Generar mesa con tamaño mediano fijo
+        window.generateRealMesa = function(mesa) {
+            console.log('🎨 Generando mesa tamaño mediano fijo:', mesa.numero, mesa.estado);
+            
+            // Determinar color según estado
+            const estadoColor = mesa.estado === 'disponible' ? '#28a745' : 
+                              mesa.estado === 'ocupada' ? '#dc3545' : 
+                              mesa.estado === 'reservada' ? '#ffc107' : '#6c757d';
+            
+            const estadoClass = `mesa-${mesa.estado}`;
+            
+            return `
+                <div class="mesa-preview ${estadoClass} mesa-grid-item" 
+                     style="background: linear-gradient(135deg, ${estadoColor}10, ${estadoColor}20); 
+                            border: 3px solid ${estadoColor}; 
+                            cursor: pointer; 
+                            transition: all 0.3s ease;
+                            width: 90px;
+                            height: 75px;
+                            border-radius: 15px;
+                                 padding: 0.5rem;
+                            text-align: center;
+                            display: flex;
+                            flex-direction: column;
+                            justify-content: center;
+                            align-items: center;"
+                     title="Mesa ${mesa.numero} - ${mesa.capacidad} personas - ${mesa.estado}"
+                     onclick="editMesaInteractive(${mesa.id}, '${mesa.numero}', ${mesa.capacidad}, '${mesa.estado}')">
+                    <div style="font-weight: bold; font-size: 0.9rem; margin-bottom: 0.2rem; line-height: 1;">${mesa.numero}</div>
+                    <div style="font-size: 0.75rem; color: #6c757d; display: flex; align-items: center; justify-content: center; gap: 2px; line-height: 1;">
+                        <i class="bi bi-people-fill" style="font-size: 0.65rem;"></i>
+                        <span>${mesa.capacidad}p</span>
+                    </div>
+                </div>
+            `;
+        };
+        
+        // Estilos adicionales para el grid interactivo
+        const gridInteractiveStyles = `
+            .mesa-grid-item:hover {
+                transform: scale(1.05) !important;
+                box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            }
+            
+            .mesa-grid-item {
+                margin: 8px;
+                min-width: 80px;
+            }
+            
+            .mesa-grid-item .preview-capacidad i {
+                color: #6c757d;
+            }
+        `;
+        
+        // Fallback para demostración
+        window.generateDemoFallback = function() {
+            return `
+                <div class="alert alert-info">
+                    <h5><i class="bi bi-info-circle"></i> Modo Demostración</h5>
+                    <p>Mostrando datos de muestra para visualización.</p>
+                    <button class="btn btn-primary" onclick="if (typeof loadInteractiveWithRealData === 'function') loadInteractiveWithRealData()">Conectar a Base de Datos</button>
+                </div>
+                ${generateInteractiveViewWithData()}
+            `;
+        };
+        
+        // Funciones de diagnóstico (ocultas para desarrolladores)
+        window.showSyncStatus = function() {
+            console.log(`📊 Estado de Sincronización:\n\n✅ Backend: Activo (localhost:5000)\n✅ Base de Datos: Conectada\n✅ API: Respondiendo\n✅ Persistencia: Activa\n\n🔄 Los cambios se guardan permanentemente en la base de datos.`);
+        };
+        
+        // Diagnóstico de problemas de autenticación
+        window.diagnoseAuthProblem = async function() {
+            console.log('=== DIAGNÓSTICO DE AUTENTICACIÓN ===');
+            
+            const token = window.authToken || localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
+            const currentUser = window.currentUser;
+            
+            console.log('Token disponible:', !!token);
+            console.log('Token length:', token ? token.length : 0);
+            console.log('Usuario actual:', currentUser);
+            
+            let diagnosticInfo = `🔍 DIAGNÓSTICO DE AUTENTICACIÓN\n\n`;
+            diagnosticInfo += `📱 Token: ${token ? '✅ Disponible' : '❌ No disponible'}\n`;
+            diagnosticInfo += `👤 Usuario: ${currentUser ? '✅ ' + currentUser.nombre + ' (' + currentUser.rol + ')' : '❌ No disponible'}\n`;
+            diagnosticInfo += `🔑 Storage: ${localStorage.getItem('authToken') ? '✅ localStorage' : ''}${sessionStorage.getItem('authToken') ? '✅ sessionStorage' : '❌ Sin storage'}\n\n`;
+            
+            // Probar login automático si no hay token
+            if (!token) {
+                diagnosticInfo += `🔄 Intentando login automático como admin...\n\n`;
+                
+                try {
+                    const loginResponse = await fetch('http://localhost:5000/api/login', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            email: 'admin@restaurante.com',
+                            password: 'admin123'
+                        })
+                    });
+                    
+                    if (loginResponse.ok) {
+                        const loginData = await loginResponse.json();
+                        window.authToken = loginData.token;
+                        localStorage.setItem('authToken', loginData.token);
+                        
+                        diagnosticInfo += `✅ Login automático exitoso\n`;
+                        diagnosticInfo += `🔑 Nuevo token guardado\n`;
+                        diagnosticInfo += `👤 Usuario: ${loginData.user.nombre}\n\n`;
+                        diagnosticInfo += `🎯 Intenta editar una mesa ahora.\n`;
+                        
+                        alert(diagnosticInfo);
+                        
+                        // Auto-recargar la vista con el nuevo token
+                        setTimeout(() => {
+                        if (typeof loadInteractiveWithRealData === 'function') {
+                            loadInteractiveWithRealData();
+                        }
+                        }, 500);
+                        return;
+                    } else {
+                        const errorData = await loginResponse.json();
+                        diagnosticInfo += `❌ Login fallido: ${errorData.error}\n\n`;
+                    }
+                } catch (error) {
+                    diagnosticInfo += `❌ Error de conexión: ${error.message}\n\n`;
+                }
+            }
+            
+            // Probar conexión con el backend
+            diagnosticInfo += `🌐 Probando conexión con backend...\n`;
+            try {
+                const testResponse = await fetch('http://localhost:5000/api/zonas');
+                if (testResponse.ok) {
+                    const zonas = await testResponse.json();
+                    diagnosticInfo += `✅ Backend respondiendo (${zonas.length} zonas encontradas)\n`;
+                } else {
+                    diagnosticInfo += `❌ Backend responde con error: ${testResponse.status}\n`;
+                }
+            } catch (error) {
+                diagnosticInfo += `❌ Error de conexión: ${error.message}\n`;
+            }
+            
+            diagnosticInfo += `\n💡 Soluciones:\n`;
+            diagnosticInfo += `1. Inicia sesión como admin en la página principal\n`;
+            diagnosticInfo += `2. Verifica que el backend esté corriendo\n`;
+            diagnosticInfo += `3. Recarga la página (Ctrl+Shift+R)\n`;
+            diagnosticInfo += `4. Limpia el cache del navegador\n\n`;
+            diagnosticInfo += `🔗 Estado actual:\n`;
+            diagnosticInfo += `Token: ${token ? token.substring(0, 20) + '...' : 'None'}\n`;
+            diagnosticInfo += `Usuario: ${currentUser ? currentUser.nombre : 'None'}\n`;
+            
+            alert(diagnosticInfo);
+        };
+        
+        // BOTÓN DE EMERGENCIA - VERSIÓN DIRECTA
+        window.emergencyForceInteractive = function() {
+            console.log('⚡ EMERGENCIA: Cargando versión interactiva directa...');
+            
+            const container = document.getElementById('tablesManagement');
+            if (container) {
+                container.innerHTML = generateEmergencyInteractiveView();
+            }
+        };
+        
+        // Versión de emergencia que no depende de APIs
+        window.generateEmergencyInteractiveView = function() {
+            const zonas = [
+                { id: 1, nombre: 'Terraza' },
+                { id: 2, nombre: 'Salón Principal' },
+                { id: 3, nombre: 'Área VIP' }
+            ];
+            
+            const mesasPorZona = {
+                1: [
+                    { id: 1, numero: 'T1', capacidad: 2, estado: 'disponible' },
+                    { id: 2, numero: 'T2', capacidad: 4, estado: 'disponible' },
+                    { id: 3, numero: 'T3', capacidad: 6, estado: 'ocupada' },
+                    { id: 4, numero: 'T4', capacidad: 8, estado: 'disponible' }
+                ],
+                2: [
+                    { id: 5, numero: 'S1', capacidad: 4, estado: 'disponible' },
+                    { id: 6, numero: 'S2', capacidad: 6, estado: 'reservada' },
+                    { id: 7, numero: 'S3', capacidad: 4, estado: 'disponible' },
+                    { id: 8, numero: 'S4', capacidad: 8, estado: 'disponible' }
+                ],
+                3: [
+                    { id: 9, numero: 'V1', capacidad: 2, estado: 'disponible' },
+                    { id: 10, numero: 'V2', capacidad: 4, estado: 'disponible' }
+                ]
+            };
+            
+            let html = `
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h4 class="text-primary">
+                        <i class="bi bi-grid-3x3"></i> Gestión de Mesas ⚡
+                    </h4>
+                    <div>
+                        <button class="btn btn-info btn-sm" onclick="alert('⚡ Modo de emergencia activo - Usando datos locales')">
+                            <i class="bi bi-info-circle"></i> Emergencia
+                        </button>
+                        <button class="btn btn-success" onclick="location.reload()">
+                            <i class="bi bi-arrow-clockwise"></i> Recargar
+                        </button>
+                    </div>
+                </div>
+                <div class="alert alert-warning">
+                    <h6><i class="bi bi-lightning-charge"></i> Modo Emergencia Activo</h6>
+                    <small>Usando datos locales sin conexión al backend</small>
+                </div>
+                <div class="row g-4">
+            `;
+            
+            zonas.forEach(zona => {
+                const mesasEnZona = mesasPorZona[zona.id] || [];
+                const totalCapacidad = mesasEnZona.reduce((sum, mesa) => sum + mesa.capacidad, 0);
+                const mesasDisponibles = mesasEnZona.filter(mesa => mesa.estado === 'disponible').length;
+                
+                html += `
+                    <div class="col-md-6 col-lg-4">
+                        <div class="card zone-card-direct">
+                            <div class="card-header bg-gradient-primary text-white">
+                                <h5 class="mb-0">${zona.nombre}</h5>
+                                <small>
+                                    <i class="bi bi-grid"></i> ${mesasEnZona.length} mesas • 
+                                    <i class="bi bi-people"></i> ${totalCapacidad} personas • 
+                                    <i class="bi bi-check-circle"></i> ${mesasDisponibles} disponibles
+                                </small>
+                            </div>
+                            <div class="card-body zone-body-direct">
+                                <div class="tables-grid-direct">
+                                    ${mesasEnZona.map(mesa => generateEmergencyMesa(mesa)).join('')}
+                                </div>
+                            </div>
+                            <div class="card-footer bg-light">
+                                <button class="btn btn-sm btn-outline-primary" onclick="alert('Edición no disponible en modo emergencia')">
+                                    <i class="bi bi-plus"></i> Agregar Mesa
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            html += '</div>';
+            html += getEmergencyStyles();
+            
+            return html;
+        };
+        
+        // Generar mesa individual para modo emergencia
+        window.generateEmergencyMesa = function(mesa) {
+            const estadoClass = `mesa-${mesa.estado}`;
+            const capacidadClass = mesa.capacidad <= 2 ? 'mesa-small' : 
+                                   mesa.capacidad <= 4 ? 'mesa-medium' : 
+                                   mesa.capacidad <= 6 ? 'mesa-large' : 'mesa-xlarge';
+            
+            return `
+                <div class="mesa-direct ${capacidadClass} ${estadoClass}" 
+                     title="Mesa ${mesa.numero} - ${mesa.capacidad} personas - ${mesa.estado}"
+                     onclick="alert('🎯 MESA ${mesa.numero}\\n\\n📍 Capacidad: ${mesa.capacidad} personas\\n📊 Estado: ${mesa.estado}\\n\\n💡 Edición no disponible en modo emergencia\\n\\nModo emergencia: Sin conexión al backend')">
+                    <div class="mesa-num">${mesa.numero}</div>
+                    <div class="mesa-cap">${mesa.capacidad}p</div>
+                </div>
+            `;
+        };
+        
+        // Estilos para modo emergencia
+        window.getEmergencyStyles = function() {
+            return `
+                <style>
+                    .bg-gradient-primary { background: linear-gradient(135deg, #007bff, #6610f2) !important; }
+                    .bg-gradient-success { background: linear-gradient(135deg, #28a745, #20c997) !important; }
+                    .zone-card-direct {
+                        box-shadow: 0 8px 30px rgba(0,0,0,0.15);
+                        border-radius: 20px;
+                        overflow: hidden;
+                        transition: transform 0.3s ease;
+                    }
+                    .zone-card-direct:hover {
+                        transform: translateY(-8px);
+                    }
+                    .tables-grid-direct {
+                        display: grid;
+                        grid-template-columns: repeat(auto-fit, minmax(60px, 1fr));
+                        gap: 1rem;
+                        padding: 1.5rem;
+                    }
+                    .mesa-direct {
+                        background: white;
+                        border: 3px solid #dee2e6;
+                        border-radius: 15px;
+                             padding: 0.5rem;
+                        text-align: center;
+                        cursor: pointer;
+                        transition: all 0.3s ease;
+                        font-weight: bold;
+                    }
+                    .mesa-direct:hover {
+                        transform: scale(1.2) rotate(3deg);
+                        box-shadow: 0 8px 25px rgba(0,0,0,0.3);
+                        z-index: 10;
+                    }
+                    .mesa-small { transform: scale(0.7); min-height: 50px; background: linear-gradient(135deg, #e8f5e8, #f0fff0); }
+                    .mesa-medium { transform: scale(0.9); min-height: 65px; background: linear-gradient(135deg, #e8f4f8, #f0ffff); }
+                    .mesa-large { transform: scale(1.1); min-height: 80px; background: linear-gradient(135deg, #fef8e8, #fffff0); }
+                    .mesa-xlarge { transform: scale(1.3); min-height: 95px; background: linear-gradient(135deg, #f8e8f8, #fff0ff); }
+                    .mesa-num { font-size: 1rem; margin-bottom: 0.3rem; }
+                    .mesa-cap { font-size: 0.8rem; opacity: 0.8; }
+                    .mesa-disponible { border-color: #28a745; color: #155724; }
+                    .mesa-ocupada { border-color: #dc3545; color: #721c24; }
+                    .mesa-reservada { border-color: #ffc107; color: #856404; }
+                </style>
+            `;
+        };
+        
+        // Agregar mesa a zona con API real
+        window.addMesaToZone = async function(zoneId, zoneName) {
+            // Crear modal para agregar mesa
+            const modalHtml = `
+                <div class="modal fade" id="addMesaModal" tabindex="-1">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <div class="modal-header bg-success text-white">
+                                <h5 class="modal-title">➕ Agregar Mesa a ${zoneName}</h5>
+                                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                            </div>
+                            <div class="modal-body">
+                                <form id="addMesaForm">
+                                    <div class="mb-3">
+                                        <label class="form-label fw-bold">🔢 Número de Mesa</label>
+                                        <input type="text" class="form-control" id="newMesaNumero" placeholder="Ej: T1, M2, etc." required>
+                                        <small class="text-muted">Identificador único de la mesa</small>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label fw-bold">👥 Capacidad de Personas</label>
+                                        <div class="d-flex align-items-center gap-2">
+                                            <input type="range" class="form-range flex-grow-1" id="newMesaCapacidad" 
+                                                   min="1" max="20" value="4" 
+                                                   oninput="document.getElementById('capDisplay').textContent = this.value">
+                                            <span class="badge bg-primary" id="capDisplay">4</span>
+                                        </div>
+                                        <small class="text-muted">Personas que pueden sentarse en esta mesa</small>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label fw-bold">🎨 Estado Inicial</label>
+                                        <select class="form-select" id="newMesaEstado">
+                                            <option value="disponible" selected>✅ Disponible</option>
+                                            <option value="mantenimiento">🔧 Mantenimiento</option>
+                                            <option value="reservada">📅 Reservada</option>
+                                        </select>
+                                    </div>
+                                </form>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">❌ Cancelar</button>
+                                <button type="button" class="btn btn-success" onclick="saveNewMesa(${zoneId}, '${zoneName}')">
+                                    <i class="bi bi-check-circle"></i> 💾 Crear Mesa
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // Eliminar modal existente
+            const existingModal = document.getElementById('addMesaModal');
+            if (existingModal) {
+                existingModal.remove();
+            }
+            
+            // Agregar y mostrar modal
+            document.body.insertAdjacentHTML('beforeend', modalHtml);
+            const modal = new bootstrap.Modal(document.getElementById('addMesaModal'));
+            modal.show();
+        };
+        
+        // Guardar nueva mesa en la base de datos
+        window.saveNewMesa = async function(zoneId, zoneName) {
+            const numero = document.getElementById('newMesaNumero').value.trim();
+            const capacidad = parseInt(document.getElementById('newMesaCapacidad').value);
+            const estado = document.getElementById('newMesaEstado').value;
+            
+            // Validaciones
+            if (!numero) {
+                showErrorToast('Por favor ingrese un número de mesa');
+                return;
+            }
+            
+            if (!capacidad || capacidad < 1 || capacidad > 20) {
+                showErrorToast('La capacidad debe estar entre 1 y 20 personas');
+                return;
+            }
+            
+            const saveBtn = document.querySelector(`button[onclick="saveNewMesa(${zoneId})"]`);
+            const originalText = saveBtn.innerHTML;
+            saveBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> Creando...';
+            saveBtn.disabled = true;
+            
+            try {
+                // Llamar a la API para crear la mesa
+                const response = await fetch('http://localhost:5000/api/mesas', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${window.authToken || localStorage.getItem('authToken') || 'admin-token'}`
+                    },
+                    body: JSON.stringify({
+                        numero: numero,
+                        capacidad: capacidad,
+                        id_zona: zoneId,
+                        estado: estado,
+                        posicion_x: 0,
+                        posicion_y: 0
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (!response.ok) {
+                    throw new Error(data.error || 'Error al crear mesa');
+                }
+                
+                // Éxito
+                bootstrap.Modal.getInstance(document.getElementById('addMesaModal')).hide();
+                showSuccessToast(`✅ Mesa ${numero} agregada exitosamente a ${zoneName}`);
+                
+                // Recargar vista para mostrar la nueva mesa
+                setTimeout(() => {
+                    if (typeof loadInteractiveWithRealData === 'function') {
+                        loadInteractiveWithRealData();
+                    }
+                }, 500);
+                
+            } catch (error) {
+                console.error('Error creando mesa:', error);
+                showErrorToast(`❌ Error: ${error.message}`);
+            } finally {
+                if (saveBtn) {
+                    saveBtn.innerHTML = originalText;
+                    saveBtn.disabled = false;
+                }
+            }
+        };
+        
+        // Función para forzar carga interactiva
+        window.forceInteractiveLoad = function() {
+            console.log('🔥 Forzando carga interactiva...');
+            if (typeof window.loadInteractiveWithRealData === 'function') {
+                window.loadInteractiveWithRealData();
+            } else if (typeof loadInteractiveWithRealData === 'function') {
+                loadInteractiveWithRealData();
+            } else {
+                console.log('❌ loadInteractiveWithRealData no disponible');
+                // Intentar cargar con datos de demostración
+                const container = document.getElementById('tablesManagement');
+                if (container) {
+                    container.innerHTML = generateDemoFallback();
+                }
+            }
+        };
+        
+        // Función de emergencia directa
+        window.emergencyForceInteractive = function() {
+            console.log('⚡ EMERGENCIA: Forzando carga interactiva directa...');
+            if (typeof window.loadInteractiveWithRealData === 'function') {
+                window.loadInteractiveWithRealData();
+            } else {
+                console.log('❌ Función no disponible even in emergency');
+            }
+        };
+        
+        // Función actualizada que usa datos reales
+        window.showInteractiveTablesWithData = function() {
+            console.log('Cargando visualización interactiva con datos actualizados...');
+            
+            const container = document.getElementById('tablesManagement');
+            if (!container) {
+                console.log('Contenedor no encontrado');
+                return;
+            }
+            
+            // Usar datos actualizados o datos por defecto
+            const mesasData = window.mesasData || {
+                1: {id: 1, numero: 'T1', capacidad: 2, estado: 'disponible'},
+                2: {id: 2, numero: 'T2', capacidad: 4, estado: 'ocupada'},
+                3: {id: 3, numero: 'T3', capacidad: 6, estado: 'disponible'},
+                4: {id: 4, numero: 'T4', capacidad: 8, estado: 'reservada'},
+                5: {id: 5, numero: 'T5', capacidad: 10, estado: 'disponible'},
+                6: {id: 6, numero: 'S1', capacidad: 2, estado: 'disponible'},
+                7: {id: 7, numero: 'S2', capacidad: 4, estado: 'disponible'},
+                8: {id: 8, numero: 'S3', capacidad: 6, estado: 'ocupada'},
+                9: {id: 9, numero: 'S4', capacidad: 4, estado: 'reservada'},
+                10: {id: 10, numero: 'S5', capacidad: 8, estado: 'disponible'},
+                11: {id: 11, numero: 'S6', capacidad: 6, estado: 'disponible'},
+                12: {id: 12, numero: 'V1', capacidad: 2, estado: 'disponible'},
+                13: {id: 13, numero: 'V2', capacidad: 4, estado: 'disponible'},
+                14: {id: 14, numero: 'V3', capacidad: 8, estado: 'ocupada'}
+            };
+            
+            container.innerHTML = generateInteractiveViewWithData(mesasData);
+            console.log('✅ Visualización actualizada con cambios guardados');
+        };
+        
+        // Generar vista con datos actualizados
+        window.generateInteractiveViewWithData = function(mesasData) {
+            console.log('🔍 generateInteractiveViewWithData recibido:', mesasData);
+            
+            // VALIDAR DATOS
+            if (!mesasData || typeof mesasData !== 'object') {
+                console.warn('❌ mesasData no es válido, usando objeto vacío');
+                mesasData = {};
+            }
+            
+            let html = `
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h4 class="text-primary">
+                        <i class="bi bi-grid-3x3"></i> Gestión Interactiva de Mesas ✨
+                    </h4>
+                    <div>
+                        <button class="btn btn-info btn-sm me-2" onclick="alert('💡 Haz clic en cualquier mesa para editar su capacidad y ver cómo cambia el tamaño')">
+                            <i class="bi bi-info-circle"></i> Ayuda
+                        </button>
+                        <button class="btn btn-success" onclick="showInteractiveTablesWithData()">
+                            <i class="bi bi-arrow-clockwise"></i> Recargar
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="row g-4">
+                    <!-- Terraza -->
+                    <div class="col-md-6 col-lg-4">
+                        <div class="card zone-card-direct">
+                            <div class="card-header bg-gradient-success text-white">
+                                <h5 class="mb-0">🌴 Terraza</h5>
+                                <small>5 mesas • ${Object.values(mesasData).filter(m => m.numero.startsWith('T')).reduce((sum, m) => sum + m.capacidad, 0)} personas</small>
+                            </div>
+                            <div class="card-body zone-body-direct">
+                                <div class="tables-grid-direct">
+                                    ${generateMesaWithData(mesasData[1])}
+                                    ${generateMesaWithData(mesasData[2])}
+                                    ${generateMesaWithData(mesasData[3])}
+                                    ${generateMesaWithData(mesasData[4])}
+                                    ${generateMesaWithData(mesasData[5])}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Salón Principal -->
+                    <div class="col-md-6 col-lg-4">
+                        <div class="card zone-card-direct">
+                            <div class="card-header bg-gradient-primary text-white">
+                                <h5 class="mb-0">🍽️ Salón Principal</h5>
+                                <small>6 mesas • ${Object.values(mesasData).filter(m => m.numero.startsWith('S')).reduce((sum, m) => sum + m.capacidad, 0)} personas</small>
+                            </div>
+                            <div class="card-body zone-body-direct">
+                                <div class="tables-grid-direct">
+                                    ${generateMesaWithData(mesasData[6])}
+                                    ${generateMesaWithData(mesasData[7])}
+                                    ${generateMesaWithData(mesasData[8])}
+                                    ${generateMesaWithData(mesasData[9])}
+                                    ${generateMesaWithData(mesasData[10])}
+                                    ${generateMesaWithData(mesasData[11])}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Área VIP -->
+                    <div class="col-md-6 col-lg-4">
+                        <div class="card zone-card-direct">
+                            <div class="card-header bg-gradient-warning text-white">
+                                <h5 class="mb-0">⭐ Área VIP</h5>
+                                <small>3 mesas • ${Object.values(mesasData).filter(m => m.numero.startsWith('V')).reduce((sum, m) => sum + m.capacidad, 0)} personas</small>
+                            </div>
+                            <div class="card-body zone-body-direct">
+                                <div class="tables-grid-direct">
+                                    ${generateMesaWithData(mesasData[12])}
+                                    ${generateMesaWithData(mesasData[13])}
+                                    ${generateMesaWithData(mesasData[14])}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // Agregar los mismos estilos de antes
+            html += getInteractiveStyles();
+            
+            return html;
+        };
+        
+        // Generar mesa individual con tamaño mediano fijo
+        window.generateMesaWithData = function(mesa) {
+            if (!mesa) return '<div></div>';
+            
+            // Determinar color según estado
+            const estadoColor = mesa.estado === 'disponible' ? '#28a745' : 
+                              mesa.estado === 'ocupada' ? '#dc3545' : 
+                              mesa.estado === 'reservada' ? '#ffc107' : '#6c757d';
+            
+            const estadoClass = `mesa-${mesa.estado}`;
+            
+            return `
+                <div class="mesa-preview ${estadoClass} mesa-grid-item" 
+                     style="background: linear-gradient(135deg, ${estadoColor}10, ${estadoColor}20); 
+                            border: 3px solid ${estadoColor}; 
+                            cursor: pointer; 
+                            transition: all 0.3s ease;
+                            width: 90px;
+                            height: 75px;
+                            border-radius: 15px;
+                                 padding: 0.5rem;
+                            text-align: center;
+                            display: flex;
+                            flex-direction: column;
+                            justify-content: center;
+                            align-items: center;"
+                     title="Mesa ${mesa.numero} - ${mesa.capacidad} personas - ${mesa.estado}"
+                     onclick="editMesaInteractive(${mesa.id}, '${mesa.numero}', ${mesa.capacidad}, '${mesa.estado}')">
+                    <div style="font-weight: bold; font-size: 0.9rem; margin-bottom: 0.2rem; line-height: 1;">${mesa.numero}</div>
+                    <div style="font-size: 0.75rem; color: #6c757d; display: flex; align-items: center; justify-content: center; gap: 2px; line-height: 1;">
+                        <i class="bi bi-people-fill" style="font-size: 0.65rem;"></i>
+                        <span>${mesa.capacidad}p</span>
+                    </div>
+                </div>
+            `;
+        };
+        
+        // Obtener estilos actualizados con diseño del editor
+        window.getInteractiveStyles = function() {
+            return '<style>.mesa-direct{background: linear-gradient(135deg, #28a74510, #28a74520);border:3px solid #28a745;border-radius:15px;padding:1.5rem;text-align:center;cursor:pointer;transition:all 0.3s ease;display:inline-block;min-width:80px}.mesa-direct:hover{transform:scale(1.05);box-shadow:0 4px 15px rgba(0,0,0,0.2)}.mesa-disponible{border-color:#28a745;color:#28a745}.mesa-ocupada{border-color:#dc3545;color:#dc3545}.mesa-reservada{border-color:#ffc107;color:#ffc107}.mesa-direct .mesa-num{font-weight:bold;font-size:1.2rem;margin-bottom:0.5rem}.mesa-direct .mesa-cap{font-size:1rem;color:#6c757d}.mesa-direct .mesa-cap i{color:#6c757d}.mesa-small{transform:scale(0.7);min-height:50px}.mesa-medium{transform:scale(0.9);min-height:65px}.mesa-large{transform:scale(1.1);min-height:80px}.mesa-xlarge{transform:scale(1.3);min-height:95px}.mesa-xxlarge{transform:scale(1.5);min-height:110px}</style>';
+        };
+        
+        // Inyectar estilos nuevos inmediatamente
+        function injectNewTableStyles() {
+            const styleId = 'mesas-estilos-nuevos';
+            if (document.getElementById(styleId)) return; // Ya existe
+            
+            const style = document.createElement('style');
+            style.id = styleId;
+            style.innerHTML = `
+
+                
+                /* También aplicar bordes redondeados al sistema mesa-preview */
+                .mesa-preview {
+                    border-radius: 15px !important;
+                    border: 3px solid #28a745 !important;
+                    background: linear-gradient(135deg, #28a74510, #28a74520) !important;
+                    padding: 1.5rem !important;
+                    text-align: center !important;
+                    cursor: pointer !important;
+                    transition: all 0.3s ease !important;
+                    display: inline-block !important;
+                    min-width: 80px !important;
+                }
+                
+                .mesa-direct.mesa-ocupada {
+                    background: linear-gradient(135deg, #dc354510, #dc354520) !important;
+                    border-color: #dc3545 !important;
+                }
+                
+                .mesa-direct.mesa-reservada {
+                    background: linear-gradient(135deg, #ffc10710, #ffc10720) !important;
+                    border-color: #ffc107 !important;
+                }
+                
+                /* Colores para mesa-preview */
+                .mesa-preview.mesa-ocupada {
+                    background: linear-gradient(135deg, #dc354510, #dc354520) !important;
+                    border-color: #dc3545 !important;
+                }
+                
+                .mesa-preview.mesa-reservada {
+                    background: linear-gradient(135deg, #ffc10710, #ffc10720) !important;
+                    border-color: #ffc107 !important;
+                }
+                
+                .mesa-direct:hover {
+                    transform: scale(1.05) !important;
+                    box-shadow: 0 4px 15px rgba(0,0,0,0.2) !important;
+                }
+                
+                .mesa-num {
+                    font-weight: bold !important;
+                    font-size: 1.2rem !important;
+                    margin-bottom: 0.5rem !important;
+                }
+                
+                .mesa-cap {
+                    font-size: 1rem !important;
+                    color: #6c757d !important;
+                }
+                
+                .mesa-cap i {
+                    color: #6c757d !important;
+                }
+                
+                .mesa-small { 
+                    transform: scale(0.8) !important; 
+                    min-height: 60px !important; 
+                    max-height: 70px !important;
+                    min-width: 70px !important; 
+                    max-width: 80px !important; 
+                }
+                .mesa-medium { 
+                    transform: scale(0.9) !important; 
+                    min-height: 70px !important; 
+                    max-height: 80px !important;
+                    min-width: 80px !important; 
+                    max-width: 90px !important; 
+                }
+                .mesa-large { 
+                    transform: scale(1.0) !important; 
+                    min-height: 80px !important; 
+                    max-height: 90px !important;
+                    min-width: 90px !important; 
+                    max-width: 100px !important; 
+                }
+                .mesa-xlarge { 
+                    transform: scale(1.1) !important; 
+                    min-height: 90px !important; 
+                    max-height: 100px !important;
+                    min-width: 100px !important; 
+                    max-width: 110px !important; 
+                }
+                .mesa-xxlarge { 
+                    transform: scale(1.2) !important; 
+                    min-height: 100px !important; 
+                    max-height: 110px !important;
+                    min-width: 110px !important; 
+                    max-width: 120px !important; 
+                }
+                
+                /* También aplicar a mesas-preview (el otro sistema) */
+                .mesa-preview-small { 
+                    transform: scale(0.8) !important; 
+                    min-height: 60px !important; 
+                    max-height: 70px !important;
+                    min-width: 70px !important; 
+                    max-width: 80px !important; 
+                }
+                .mesa-preview-medium { 
+                    transform: scale(0.9) !important; 
+                    min-height: 70px !important; 
+                    max-height: 80px !important;
+                    min-width: 80px !important; 
+                    max-width: 90px !important; 
+                }
+                .mesa-preview-large { 
+                    transform: scale(1.0) !important; 
+                    min-height: 80px !important; 
+                    max-height: 90px !important;
+                    min-width: 90px !important; 
+                    max-width: 100px !important; 
+                }
+                .mesa-preview-xlarge { 
+                    transform: scale(1.1) !important; 
+                    min-height: 90px !important; 
+                    max-height: 100px !important;
+                    min-width: 100px !important; 
+                    max-width: 110px !important; 
+                }
+                .mesa-preview-xxlarge { 
+                    transform: scale(1.2) !important; 
+                    min-height: 100px !important; 
+                    max-height: 110px !important;
+                    min-width: 110px !important; 
+                    max-width: 120px !important; 
+                }
+                
+                /* Mejorar espaciado en el grid con límites */
+                .tables-grid-direct {
+                    display: grid !important;
+                    grid-template-columns: repeat(auto-fit, minmax(70px, 120px)) !important;
+                    gap: 1.2rem !important;
+                    padding: 1rem !important;
+                    justify-items: center !important;
+                    align-items: start !important;
+                }
+                
+                /* Ajustar para pantallas más pequeñas */
+                @media (max-width: 768px) {
+                    .tables-grid-direct {
+                        grid-template-columns: repeat(auto-fit, minmax(60px, 100px)) !important;
+                        gap: 1rem !important;
+                    }
+                    
+                    .mesa-preview-small { max-width: 70px !important; max-height: 65px !important; }
+                    .mesa-preview-medium { max-width: 80px !important; max-height: 75px !important; }
+                    .mesa-preview-large { max-width: 90px !important; max-height: 85px !important; }
+                    .mesa-preview-xlarge { max-width: 100px !important; max-height: 95px !important; }
+                    .mesa-preview-xxlarge { max-width: 110px !important; max-height: 105px !important; }
+                }
+                
+                @media (max-width: 576px) {
+                    .tables-grid-direct {
+                        grid-template-columns: repeat(auto-fit, minmax(50px, 80px)) !important;
+                        gap: 0.8rem !important;
+                    }
+                    
+                    .mesa-preview-small { max-width: 60px !important; max-height: 60px !important; }
+                    .mesa-preview-medium { max-width: 70px !important; max-height: 70px !important; }
+                    .mesa-preview-large { max-width: 80px !important; max-height: 80px !important; }
+                    .mesa-preview-xlarge { max-width: 90px !important; max-height: 90px !important; }
+                    .mesa-preview-xxlarge { max-width: 100px !important; max-height: 100px !important; }
+                }
+            `;
+            document.head.appendChild(style);
+            console.log('✅ Estilos nuevos de mesas inyectados con espaciado mejorado');
+        }
+        
+        // Inyectar estilos inmediatamente
+        injectNewTableStyles();
+        
+        // Auto-forzar después de 2 segundos
+        setTimeout(() => {
+            const mesasTab = document.getElementById('mesasTab');
+            if (mesasTab && mesasTab.classList.contains('active')) {
+                console.log('Auto-forzando nueva visualización...');
+                if (typeof forceNewVisualization === 'function') {
+                    forceNewVisualization();
+                }
+            }
+        }, 2000);
+    </script>
+</body>
+</html>

@@ -1,0 +1,22 @@
+# Node
+node_modules/
+npm-debug.log*
+yarn-error.log*
+
+# Env
+.env
+.env.*
+*.key
+
+# Build
+dist/
+build/
+
+# Cache
+.cache/
+.tmp/
+__pycache__/
+*.log
+
+# n8n
+.n8n/

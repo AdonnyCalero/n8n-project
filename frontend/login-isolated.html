@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Diagnóstico Login Admin - Aislado</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.2/font/bootstrap-icons.min.css">
+</head>
+<body>
+    <div class="container mt-4">
+        <h1>🔧 Diagnóstico Aislado de Login Admin</h1>
+        
+        <div class="row">
+            <div class="col-md-8">
+                <div class="card">
+                    <div class="card-header bg-primary text-white">Formulario de Login Admin (Aislado)</div>
+                    <div class="card-body">
+                        <!-- Área de mensajes -->
+                        <div id="isolatedError" class="alert alert-danger" style="display: none;"></div>
+                        
+                        <form id="isolatedLoginForm">
+                            <div class="mb-3">
+                                <label for="isolatedEmail" class="form-label">Email Admin</label>
+                                <input type="email" class="form-control" id="isolatedEmail" value="admin@restaurante.com" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="isolatedPassword" class="form-label">Contraseña Admin</label>
+                                <input type="password" class="form-control" id="isolatedPassword" value="admin123" required>
+                            </div>
+                            
+                            <div class="d-grid gap-2">
+                                <button type="submit" class="btn btn-primary" id="isolatedSubmitBtn">
+                                    <i class="bi bi-box-arrow-in-right"></i> Iniciar Sesión Admin
+                                </button>
+                                <button type="button" class="btn btn-info" onclick="testIsolatedLogin()">
+                                    <i class="bi bi-speedometer2"></i> Test Directo
+                                </button>
+                                <button type="button" class="btn btn-warning" onclick="clearIsolatedForm()">
+                                    <i class="bi bi-arrow-clockwise"></i> Limpiar
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="col-md-4">
+                <div class="card">
+                    <div class="card-header bg-dark text-white">Estado y Logs</div>
+                    <div class="card-body">
+                        <h6>Estado del Formulario:</h6>
+                        <div id="formStatus" class="alert alert-info">
+                            Formulario listo para pruebas
+                        </div>
+                        
+                        <h6>Estado del Login:</h6>
+                        <div id="loginStatus" class="alert alert-secondary">
+                            Esperando acciones...
+                        </div>
+                        
+                        <h6>Logs del Proceso:</h6>
+                        <div id="processLogs" class="border p-3 bg-dark text-light" style="height: 300px; overflow-y: auto; font-family: monospace; font-size: 12px;">
+                            Esperando actividades...
+                        </div>
+                        
+                        <div class="mt-3 d-grid gap-2">
+                            <button class="btn btn-secondary" onclick="clearLogs()">
+                                <i class="bi bi-trash"></i> Limpiar Logs
+                            </button>
+                            <button class="btn btn-info" onclick="exportLogs()">
+                                <i class="bi bi-download"></i> Exportar Logs
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:5000/api';
+        let authToken = null;
+
+        function addLog(message, type = 'info') {
+            const logsDiv = document.getElementById('processLogs');
+            const timestamp = new Date().toLocaleTimeString();
+            const icon = type === 'error' ? '❌' : type === 'success' ? '✅' : type === 'warning' ? '⚠️' : 'ℹ️';
+            
+            logsDiv.innerHTML += `<div>[${timestamp}] ${icon} ${message}</div>`;
+            logsDiv.scrollTop = logsDiv.scrollHeight;
+        }
+
+        function showError(message) {
+            const errorDiv = document.getElementById('isolatedError');
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+        }
+
+        function hideError() {
+            const errorDiv = document.getElementById('isolatedError');
+            errorDiv.style.display = 'none';
+        }
+
+        function updateLoginStatus(message, type = 'info') {
+            const statusDiv = document.getElementById('loginStatus');
+            statusDiv.className = `alert alert-${type}`;
+            statusDiv.innerHTML = `<strong>${message}</strong>`;
+        }
+
+        function updateFormStatus(message, type = 'info') {
+            const statusDiv = document.getElementById('formStatus');
+            statusDiv.className = `alert alert-${type}`;
+            statusDiv.innerHTML = `<strong>${message}</strong>`;
+        }
+
+        async function testIsolatedLogin() {
+            hideError();
+            updateLoginStatus('Iniciando login directo...', 'info');
+            addLog('🧪 Test de login directo sin formulario');
+            
+            try {
+                const response = await fetch(`${API_BASE}/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        email: 'admin@restaurante.com',
+                        password: 'admin123'
+                    })
+                });
+                
+                addLog(`📊 Status respuesta: ${response.status}`);
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    authToken = data.token;
+                    
+                    addLog(`✅ Login exitoso: ${data.user.nombre} (${data.user.rol})`);
+                    addLog(`🔑 Token obtenido: ${data.token.substring(0, 20)}...`);
+                    
+                    updateLoginStatus(`✅ Login exitoso como ${data.user.nombre}`, 'success');
+                } else {
+                    const errorData = await response.json();
+                    addLog(`❌ Error en login: ${errorData.error || 'Error desconocido'}`);
+                    updateLoginStatus(`❌ Error en login`, 'danger');
+                    showError(errorData.error || 'Error en login');
+                }
+            } catch (error) {
+                addLog(`💥 Error en petición: ${error.message}`);
+                updateLoginStatus(`💥 Error de conexión`, 'danger');
+                showError(`Error de conexión: ${error.message}`);
+            }
+        }
+
+        async function handleIsolatedLogin(event) {
+            event.preventDefault();
+            hideError();
+            updateFormStatus('Enviando formulario...', 'info');
+            updateLoginStatus('Procesando formulario...', 'info');
+            
+            const email = document.getElementById('isolatedEmail').value;
+            const password = document.getElementById('isolatedPassword').value;
+            
+            addLog(`📤 Formulario enviado: Email=${email}`);
+            
+            try {
+                const response = await fetch(`${API_BASE}/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ email, password })
+                });
+                
+                addLog(`📊 Status respuesta: ${response.status}`);
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    authToken = data.token;
+                    
+                    addLog(`✅ Login exitoso: ${data.user.nombre} (${data.user.rol})`);
+                    addLog(`🔑 Token guardado en localStorage`);
+                    
+                    localStorage.setItem('token', authToken);
+                    localStorage.setItem('user', JSON.stringify(data.user));
+                    
+                    updateFormStatus('✅ Login exitoso', 'success');
+                    updateLoginStatus(`✅ Sesión iniciada como ${data.user.nombre}`, 'success');
+                    
+                    // Simular redirección a dashboard después de 2 segundos
+                    setTimeout(() => {
+                        addLog('🔄 Simulando redirección a dashboard...');
+                        updateLoginStatus('✅ Redirigiendo a dashboard...', 'success');
+                    }, 2000);
+                    
+                } else {
+                    const errorData = await response.json();
+                    addLog(`❌ Error en login: ${errorData.error || 'Error desconocido'}`);
+                    updateFormStatus(`❌ Error en login`, 'danger');
+                    showError(errorData.error || 'Error en login');
+                }
+            } catch (error) {
+                addLog(`💥 Error en petición: ${error.message}`);
+                updateFormStatus(`💥 Error de conexión`, 'danger');
+                showError(`Error de conexión: ${error.message}`);
+            }
+        }
+
+        function clearLogs() {
+            document.getElementById('processLogs').innerHTML = '🧹 Logs limpiados';
+        }
+
+        function exportLogs() {
+            const logs = document.getElementById('processLogs').innerText;
+            const blob = new Blob([logs], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `login-isolated-logs-${new Date().toISOString().slice(0, 19)}.txt`;
+            a.click();
+            addLog('📄 Logs exportados');
+        }
+
+        function clearIsolatedForm() {
+            document.getElementById('isolatedLoginForm').reset();
+            hideError();
+            updateFormStatus('Formulario limpiado', 'info');
+        }
+
+        // Event listeners
+        document.addEventListener('DOMContentLoaded', function() {
+            const submitBtn = document.getElementById('isolatedSubmitBtn');
+            const form = document.getElementById('isolatedLoginForm');
+            
+            if (form) {
+                form.addEventListener('submit', handleIsolatedLogin);
+                
+                // Habilitar botón submit
+                submitBtn.disabled = false;
+                
+                // Verificar que los campos tengan valores
+                const emailInput = document.getElementById('isolatedEmail');
+                const passwordInput = document.getElementById('isolatedPassword');
+                
+                if (emailInput && passwordInput) {
+                    emailInput.addEventListener('input', () => {
+                        if (emailInput.value && passwordInput.value) {
+                            submitBtn.disabled = false;
+                        } else {
+                            submitBtn.disabled = true;
+                        }
+                    });
+                    
+                    passwordInput.addEventListener('input', () => {
+                        if (emailInput.value && passwordInput.value) {
+                            submitBtn.disabled = false;
+                        } else {
+                            submitBtn.disabled = true;
+                        }
+                    });
+                }
+                
+                addLog('🌟 Página de diagnóstico aislado inicializada');
+            }
+        });
+    </script>
+</body>
+</html>

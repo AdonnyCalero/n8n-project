@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test de Compatibilidad - Navegadores</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <style>
+        .compatibility-test {
+            background: var(--white);
+            padding: 2rem;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            max-width: 800px;
+            margin: 2rem auto;
+        }
+        
+        .test-section {
+            margin-bottom: 2rem;
+            padding: 1.5rem;
+            border: 1px solid var(--light-color);
+            border-radius: var(--border-radius);
+        }
+        
+        .test-result {
+            padding: 1rem;
+            border-radius: var(--border-radius);
+            margin-top: 1rem;
+        }
+        
+        .test-pass {
+            background: var(--success-color);
+            color: var(--white);
+        }
+        
+        .test-fail {
+            background: var(--danger-color);
+            color: var(--white);
+        }
+        
+        .test-warning {
+            background: var(--warning-color);
+            color: var(--white);
+        }
+        
+        .browser-info {
+            background: var(--primary-color);
+            color: var(--white);
+            padding: 1rem;
+            border-radius: var(--border-radius);
+            margin-bottom: 2rem;
+        }
+        
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+        
+        .feature-card {
+            padding: 1rem;
+            border: 1px solid var(--light-color);
+            border-radius: var(--border-radius);
+            text-align: center;
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 20px;
+            background: var(--light-color);
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 1rem 0;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: var(--success-color);
+            transition: width 0.3s ease;
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="container">
+            <div class="nav">
+                <h1><i class="fas fa-browser"></i> Test de Compatibilidad</h1>
+                <nav class="nav-links">
+                    <a href="#" onclick="location.href='index.html'">Volver al Sistema</a>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <main class="main">
+        <div class="container">
+            <div class="compatibility-test">
+                <h2>🧪 Test de Compatibilidad de Navegador</h2>
+                <p>Esta página verifica que tu navegador sea compatible con todas las características del sistema.</p>
+                
+                <div class="browser-info" id="browserInfo">
+                    <h3>Información del Navegador</h3>
+                    <div id="browserDetails"></div>
+                </div>
+
+                <div class="test-section">
+                    <h3>🌐 Compatibilidad General</h3>
+                    <div id="generalTests"></div>
+                </div>
+
+                <div class="test-section">
+                    <h3>📱 Características HTML5/CSS3</h3>
+                    <div class="feature-grid" id="featureTests"></div>
+                </div>
+
+                <div class="test-section">
+                    <h3>⚡ Características JavaScript</h3>
+                    <div class="feature-grid" id="jsTests"></div>
+                </div>
+
+                <div class="test-section">
+                    <h3>🔒 Seguridad y Rendimiento</h3>
+                    <div id="securityTests"></div>
+                </div>
+
+                <div class="test-section">
+                    <h3>📊 Resultado General</h3>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="progressFill" style="width: 0%"></div>
+                    </div>
+                    <div id="finalResult"></div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script src="js/app.js"></script>
+    <script>
+        // Sistema de testing de compatibilidad
+        class CompatibilityTester {
+            constructor() {
+                this.tests = [];
+                this.results = {
+                    passed: 0,
+                    failed: 0,
+                    warnings: 0,
+                    total: 0
+                };
+                this.browserInfo = this.getBrowserInfo();
+            }
+
+            getBrowserInfo() {
+                const ua = navigator.userAgent;
+                let browser = 'Unknown';
+                let version = 'Unknown';
+                
+                if (ua.indexOf('Chrome') > -1) {
+                    browser = 'Chrome';
+                    version = ua.match(/Chrome\/(\d+)/)?.[1] || 'Unknown';
+                } else if (ua.indexOf('Firefox') > -1) {
+                    browser = 'Firefox';
+                    version = ua.match(/Firefox\/(\d+)/)?.[1] || 'Unknown';
+                } else if (ua.indexOf('Edge') > -1) {
+                    browser = 'Edge';
+                    version = ua.match(/Edge\/(\d+)/)?.[1] || 'Unknown';
+                } else if (ua.indexOf('Safari') > -1) {
+                    browser = 'Safari';
+                    version = ua.match(/Version\/(\d+)/)?.[1] || 'Unknown';
+                }
+                
+                return {
+                    name: browser,
+                    version: version,
+                    userAgent: ua,
+                    platform: navigator.platform,
+                    language: navigator.language,
+                    cookieEnabled: navigator.cookieEnabled,
+                    onLine: navigator.onLine,
+                    screenResolution: `${screen.width}x${screen.height}`,
+                    viewportSize: `${window.innerWidth}x${window.innerHeight}`
+                };
+            }
+
+            addTest(name, testFunction, category = 'general') {
+                this.tests.push({
+                    name,
+                    test: testFunction,
+                    category
+                });
+            }
+
+            runTest(test) {
+                try {
+                    const result = test.test();
+                    return {
+                        name: test.name,
+                        passed: result.passed,
+                        message: result.message,
+                        details: result.details || ''
+                    };
+                } catch (error) {
+                    return {
+                        name: test.name,
+                        passed: false,
+                        message: 'Error al ejecutar test',
+                        details: error.message
+                    };
+                }
+            }
+
+            async runAllTests() {
+                this.results = { passed: 0, failed: 0, warnings: 0, total: 0 };
+                
+                for (const test of this.tests) {
+                    const result = this.runTest(test);
+                    
+                    if (result.passed === true) {
+                        this.results.passed++;
+                    } else if (result.passed === 'warning') {
+                        this.results.warnings++;
+                    } else {
+                        this.results.failed++;
+                    }
+                    this.results.total++;
+                    
+                    // Mostrar resultado según categoría
+                    if (test.category === 'feature') {
+                        this.displayFeatureResult(result);
+                    } else if (test.category === 'js') {
+                        this.displayJSResult(result);
+                    } else if (test.category === 'security') {
+                        this.displaySecurityResult(result);
+                    } else {
+                        this.displayGeneralResult(result);
+                    }
+                    
+                    // Pequeña pausa para no bloquear la UI
+                    await new Promise(resolve => setTimeout(resolve, 10));
+                }
+                
+                this.updateProgress();
+                this.showFinalResult();
+            }
+
+            displayBrowserInfo() {
+                const container = document.getElementById('browserDetails');
+                container.innerHTML = `
+                    <div class="browser-info-grid">
+                        <div><strong>Navegador:</strong> ${this.browserInfo.name} ${this.browserInfo.version}</div>
+                        <div><strong>Plataforma:</strong> ${this.browserInfo.platform}</div>
+                        <div><strong>Idioma:</strong> ${this.browserInfo.language}</div>
+                        <div><strong>Cookies:</strong> ${this.browserInfo.cookieEnabled ? '✅ Habilitadas' : '❌ Deshabilitadas'}</div>
+                        <div><strong>Online:</strong> ${this.browserInfo.onLine ? '✅ Sí' : '❌ No'}</div>
+                        <div><strong>Pantalla:</strong> ${this.browserInfo.screenResolution}</div>
+                        <div><strong>Viewport:</strong> ${this.browserInfo.viewportSize}</div>
+                    </div>
+                `;
+            }
+
+            displayGeneralResult(result) {
+                const container = document.getElementById('generalTests');
+                container.innerHTML += this.createResultHTML(result);
+            }
+
+            displayFeatureResult(result) {
+                const container = document.getElementById('featureTests');
+                container.innerHTML += `
+                    <div class="feature-card">
+                        <h4>${result.name}</h4>
+                        <div class="${this.getResultClass(result.passed)}">
+                            ${this.getResultIcon(result.passed)} ${result.message}
+                        </div>
+                    </div>
+                `;
+            }
+
+            displayJSResult(result) {
+                const container = document.getElementById('jsTests');
+                container.innerHTML += `
+                    <div class="feature-card">
+                        <h4>${result.name}</h4>
+                        <div class="${this.getResultClass(result.passed)}">
+                            ${this.getResultIcon(result.passed)} ${result.message}
+                        </div>
+                    </div>
+                `;
+            }
+
+            displaySecurityResult(result) {
+                const container = document.getElementById('securityTests');
+                container.innerHTML += this.createResultHTML(result);
+            }
+
+            createResultHTML(result) {
+                const cssClass = this.getResultClass(result.passed);
+                const icon = this.getResultIcon(result.passed);
+                return `
+                    <div class="test-result ${cssClass}">
+                        <strong>${icon} ${result.name}</strong>
+                        <p>${result.message}</p>
+                        ${result.details ? `<small>${result.details}</small>` : ''}
+                    </div>
+                `;
+            }
+
+            getResultClass(passed) {
+                if (passed === true) return 'test-pass';
+                if (passed === 'warning') return 'test-warning';
+                return 'test-fail';
+            }
+
+            getResultIcon(passed) {
+                if (passed === true) return '✅';
+                if (passed === 'warning') return '⚠️';
+                return '❌';
+            }
+
+            updateProgress() {
+                const percentage = (this.results.passed / this.results.total) * 100;
+                const progressFill = document.getElementById('progressFill');
+                progressFill.style.width = `${percentage}%`;
+            }
+
+            showFinalResult() {
+                const container = document.getElementById('finalResult');
+                const percentage = (this.results.passed / this.results.total) * 100;
+                
+                let status, message, recommendation;
+                
+                if (percentage >= 95) {
+                    status = 'test-pass';
+                    message = '✅ Excelente Compatibilidad';
+                    recommendation = 'Tu navegador es completamente compatible con el sistema.';
+                } else if (percentage >= 80) {
+                    status = 'test-warning';
+                    message = '⚠️ Compatibilidad Aceptable';
+                    recommendation = 'El sistema funcionará correctamente, pero algunas características podrían no estar disponibles.';
+                } else {
+                    status = 'test-fail';
+                    message = '❌ Compatibilidad Limitada';
+                    recommendation = 'Recomendamos actualizar tu navegador o usar una versión más reciente para una mejor experiencia.';
+                }
+                
+                container.innerHTML = `
+                    <div class="test-result ${status}">
+                        <h3>${message}</h3>
+                        <p><strong>Tests pasados:</strong> ${this.results.passed}/${this.results.total} (${percentage.toFixed(1)}%)</p>
+                        ${this.results.warnings > 0 ? `<p><strong>Advertencias:</strong> ${this.results.warnings}</p>` : ''}
+                        ${this.results.failed > 0 ? `<p><strong>Fallas:</strong> ${this.results.failed}</p>` : ''}
+                        <p><strong>Recomendación:</strong> ${recommendation}</p>
+                        <div style="margin-top: 1rem;">
+                            <button class="btn btn-primary" onclick="location.href='index.html'">
+                                <i class="fas fa-home"></i> Ir al Sistema
+                            </button>
+                            <button class="btn btn-secondary" onclick="location.reload()">
+                                <i class="fas fa-redo"></i> Repetir Test
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }
+        }
+
+        // Definir tests
+        function setupTests(tester) {
+            // Tests generales
+            tester.addTest('Cookies Habilitadas', () => {
+                const enabled = navigator.cookieEnabled;
+                return {
+                    passed: enabled,
+                    message: enabled ? 'Las cookies están habilitadas' : 'Las cookies están deshabilitadas'
+                };
+            }, 'general');
+
+            tester.addTest('JavaScript Habilitado', () => {
+                return {
+                    passed: true,
+                    message: 'JavaScript está habilitado'
+                };
+            }, 'general');
+
+            tester.addTest('Conexión Online', () => {
+                const online = navigator.onLine;
+                return {
+                    passed: online,
+                    message: online ? 'El navegador está online' : 'El navegador está offline'
+                };
+            }, 'general');
+
+            // Tests de características HTML5/CSS3
+            tester.addTest('LocalStorage', () => {
+                try {
+                    const test = '__test__';
+                    localStorage.setItem(test, test);
+                    localStorage.removeItem(test);
+                    return {
+                        passed: true,
+                        message: 'LocalStorage está disponible'
+                    };
+                } catch (e) {
+                    return {
+                        passed: false,
+                        message: 'LocalStorage no está disponible'
+                    };
+                }
+            }, 'feature');
+
+            tester.addTest('SessionStorage', () => {
+                try {
+                    const test = '__test__';
+                    sessionStorage.setItem(test, test);
+                    sessionStorage.removeItem(test);
+                    return {
+                        passed: true,
+                        message: 'SessionStorage está disponible'
+                    };
+                } catch (e) {
+                    return {
+                        passed: false,
+                        message: 'SessionStorage no está disponible'
+                    };
+                }
+            }, 'feature');
+
+            tester.addTest('Geolocation API', () => {
+                const available = 'geolocation' in navigator;
+                return {
+                    passed: available,
+                    message: available ? 'Geolocation API está disponible' : 'Geolocation API no está disponible'
+                };
+            }, 'feature');
+
+            tester.addTest('Canvas API', () => {
+                const canvas = document.createElement('canvas');
+                const supported = !!(canvas.getContext && canvas.getContext('2d'));
+                return {
+                    passed: supported,
+                    message: supported ? 'Canvas API está disponible' : 'Canvas API no está disponible'
+                };
+            }, 'feature');
+
+            tester.addTest('CSS Grid', () => {
+                const supported = CSS.supports('display', 'grid');
+                return {
+                    passed: supported,
+                    message: supported ? 'CSS Grid está soportado' : 'CSS Grid no está soportado'
+                };
+            }, 'feature');
+
+            tester.addTest('Flexbox', () => {
+                const supported = CSS.supports('display', 'flex');
+                return {
+                    passed: supported,
+                    message: supported ? 'Flexbox está soportado' : 'Flexbox no está soportado'
+                };
+            }, 'feature');
+
+            // Tests de JavaScript
+            tester.addTest('ES6 Arrow Functions', () => {
+                try {
+                    eval('() => {}');
+                    return {
+                        passed: true,
+                        message: 'Arrow functions (ES6) están soportadas'
+                    };
+                } catch (e) {
+                    return {
+                        passed: false,
+                        message: 'Arrow functions (ES6) no están soportadas'
+                    };
+                }
+            }, 'js');
+
+            tester.addTest('Promise API', () => {
+                const supported = 'Promise' in window;
+                return {
+                    passed: supported,
+                    message: supported ? 'Promise API está disponible' : 'Promise API no está disponible'
+                };
+            }, 'js');
+
+            tester.addTest('Fetch API', () => {
+                const supported = 'fetch' in window;
+                return {
+                    passed: supported,
+                    message: supported ? 'Fetch API está disponible' : 'Fetch API no está disponible'
+                };
+            }, 'js');
+
+            tester.addTest('Async/Await', () => {
+                try {
+                    eval('async function test() { await Promise.resolve(); }');
+                    return {
+                        passed: true,
+                        message: 'Async/Await está soportado'
+                    };
+                } catch (e) {
+                    return {
+                        passed: false,
+                        message: 'Async/Await no está soportado'
+                    };
+                }
+            }, 'js');
+
+            // Tests de seguridad
+            tester.addTest('HTTPS', () => {
+                const isSecure = location.protocol === 'https:' || location.hostname === 'localhost';
+                return {
+                    passed: isSecure,
+                    message: isSecure ? 'Conexión segura (HTTPS/localhost)' : 'Conexión no segura (HTTP)',
+                    details: isSecure ? '' : 'Para producción, recomendamos usar HTTPS'
+                };
+            }, 'security');
+
+            tester.addTest('XSS Protection', () => {
+                const hasXSSProtection = document.querySelector('meta[http-equiv="X-XSS-Protection"]');
+                return {
+                    passed: true, // No es crítico
+                    message: hasXSSProtection ? 'XSS Protection detectado' : 'XSS Protection no detectado (opcional)'
+                };
+            }, 'security');
+
+            tester.addTest('Content Security Policy', () => {
+                const hasCSP = document.querySelector('meta[http-equiv="Content-Security-Policy"]');
+                return {
+                    passed: true, // No es crítico
+                    message: hasCSP ? 'CSP detectado' : 'CSP no detectado (recomendado para producción)'
+                };
+            }, 'security');
+        }
+
+        // Inicializar y ejecutar tests
+        document.addEventListener('DOMContentLoaded', async function() {
+            const tester = new CompatibilityTester();
+            
+            // Mostrar información del navegador
+            tester.displayBrowserInfo();
+            
+            // Configurar tests
+            setupTests(tester);
+            
+            // Ejecutar todos los tests
+            await tester.runAllTests();
+        });
+    </script>
+</body>
+</html>
