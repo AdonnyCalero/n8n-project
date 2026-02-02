@@ -29,11 +29,80 @@ class Database:
             return True
         except Error as e:
             print(f"Error de conexión: {e}")
-            return False
+            # Intentar reconectar después de un breve retraso
+            import time
+            time.sleep(1)
+            try:
+                self.connection = mysql.connector.connect(**self.config)
+                return True
+            except Error as e2:
+                print(f"Segundo intento de conexión fallido: {e2}")
+                return False
     
     def disconnect(self):
         if self.connection and self.connection.is_connected():
-            self.connection.close()
+            try:
+                self.connection.close()
+            except Error as e:
+                print(f"Error al cerrar conexión: {e}")
+            except Error as e:
+                print(f"Error al cerrar conexión: {e}")
+            except Error as e:
+                print(f"Error al cerrar conexión: {e}")
+            except Error as e:
+                print(f"Error al cerrar conexión: {e}")
+            except Error as e:
+                print(f"Error al cerrar conexión: {e}")
+            except Error as e:
+                print(f"Error al cerrar conexión: {e}")
+            except Error as e:
+                print(f"Error al cerrar conexión: {e}")
+            except Error as e:
+                print(f"Error al cerrar conexión: {e}")
+            except Error as e:
+                print(f"Error al cerrar conexión: {e}")
+            except Error as e:
+                print(f"Error al cerrar conexión: {e}")
+            except Error as e:
+                print(f"Error al cerrar conexión: {e}")
+            except Error as e:
+                print(f"Error al cerrar conexión: {e}")
+            except Error as e:
+                print(f"Error al cerrar conexión: {e}")
+            except Error as e:
+                print(f"Error al cerrar conexión: {e}")
+            except Error as e:
+                print(f"Error al cerrar conexión: {e}")
+            except Error as e:
+                print(f"Error al cerrar conexión: {e}")
+            except Error as e:
+                print(f"Error al cerrar conexión: {e}")
+            except Error as e:
+                print(f"Error al cerrar conexión: {e}")
+            except Error as e:
+                print(f"Error al cerrar conexión: {e}")
+            except Error as e:
+                print(f"Error al cerrar conexión: {e}")
+            except Error as e:
+                print(f"Error al cerrar conexión: {e}")
+            except Error as e:
+                print(f"Error al cerrar conexión: {e}")
+            except Error as e:
+                print(f"Error al cerrar conexión: {e}")
+            except Error as e:
+                print(f"Error al cerrar conexión: {e}")
+            except Error as e:
+                print(f"Error al cerrar conexión: {e}")
+            except Error as e:
+                print(f"Error al cerrar conexión: {e}")
+            except Error as e:
+                print(f"Error al cerrar conexión: {e}")
+            except Error as e:
+                print(f"Error al cerrar conexión: {e}")
+            except Error as e:
+                print(f"Error al cerrar conexión: {e}")
+            except Error as e:
+                print(f"Error al cerrar conexión: {e}")
     
     def execute_query(self, query, params=None, fetch_one=False, fetch_all=True):
         try:
@@ -62,6 +131,30 @@ class Database:
             return result
         except Error as e:
             print(f"Error en consulta: {e}")
+            if self.connection:
+                # Intentar reconectar si la conexión se perdió
+                if not self.connection.is_connected():
+                    self.connect()
+            return None
+    
+    def execute_insert(self, query, params):
+        try:
+            if not self.connection or not self.connection.is_connected():
+                self.connect()
+            
+            cursor = self.connection.cursor()
+            cursor.execute(query, params)
+            self.connection.commit()  # Asegurarse de que la transacción se complete
+            last_id = cursor.lastrowid
+            cursor.close()
+            return last_id
+        except Error as e:
+            print(f"Error en inserción: {e}")
+            if self.connection:
+                self.connection.rollback()  # Revertir en caso de error
+                # Intentar reconectar si la conexión se perdió
+                if not self.connection.is_connected():
+                    self.connect()
             return None
     
     def _serialize_datetime_fields(self, obj):
@@ -76,20 +169,6 @@ class Database:
                     minutes = (total_seconds % 3600) // 60
                     seconds = total_seconds % 60
                     obj[key] = f"{hours:02d}:{minutes:02d}:{seconds:02d}"
-    
-    def execute_insert(self, query, params):
-        try:
-            if not self.connection or not self.connection.is_connected():
-                self.connect()
-            
-            cursor = self.connection.cursor()
-            cursor.execute(query, params)
-            last_id = cursor.lastrowid
-            cursor.close()
-            return last_id
-        except Error as e:
-            print(f"Error en inserción: {e}")
-            return None
 
 class AuthManager:
     def __init__(self, db):

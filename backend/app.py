@@ -997,14 +997,17 @@ def create_table():
     
     data = request.get_json()
     
-    # Validar datos requeridos
+# Validar datos requeridos
     if not all(k in data for k in ['numero', 'capacidad', 'id_zona']):
         return jsonify({'error': 'Faltan datos requeridos: numero, capacidad, id_zona'}), 400
     
     try:
+        print(f"DEBUG: Creando mesa con datos: {data}")
+        
         # Verificar que no exista otra mesa con el mismo número en la misma zona
         check_query = "SELECT COUNT(*) as count FROM mesas WHERE numero = %s AND id_zona = %s"
         existing = db.execute_query(check_query, (data['numero'], data['id_zona']), fetch_one=True)
+        print(f"DEBUG: Verificación de mesa existente: {existing}")
         
         if existing and existing['count'] > 0:
             return jsonify({'error': 'Ya existe una mesa con ese número en esta zona'}), 400
@@ -1015,14 +1018,18 @@ def create_table():
             VALUES (%s, %s, %s, %s, %s, %s)
         """
         
-        new_table_id = db.execute_query(insert_query, (
+        insert_params = (
             data['numero'],
             data['capacidad'],
             data['id_zona'],
             data.get('posicion_x', 0),
             data.get('posicion_y', 0),
             data.get('estado', 'disponible')
-        ), fetch_all=False)
+        )
+        print(f"DEBUG: Parámetros de inserción: {insert_params}")
+        
+        new_table_id = db.execute_insert(insert_query, insert_params)
+        print(f"DEBUG: ID de nueva mesa: {new_table_id}")
         
         if new_table_id:
             # Obtener la mesa creada para devolverla
@@ -1254,6 +1261,6 @@ def internal_error(error):
 if __name__ == '__main__':
     if db.connect():
         print("Conexion a la base de datos establecida")
-        app.run(debug=True, host='0.0.0.0', port=5000)
+        app.run(debug=True, host='0.0.0.0', port=5000, threaded=True, use_reloader=False)
     else:
         print("No se pudo conectar a la base de datos")

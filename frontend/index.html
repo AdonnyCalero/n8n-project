@@ -1560,12 +1560,44 @@
                         fetch('http://localhost:5000/api/mesas', { headers })
                     ]);
                     
+                    console.log('📡 Respuestas fetch:', {
+                        zonasStatus: zonasResponse.status,
+                        zonasOk: zonasResponse.ok,
+                        mesasStatus: mesasResponse.status,
+                        mesasOk: mesasResponse.ok
+                    });
+                    
                     if (!zonasResponse.ok || !mesasResponse.ok) {
+                        console.error('❌ Error en respuestas:', {
+                            zonasError: zonasResponse.statusText,
+                            mesasError: mesasResponse.statusText
+                        });
                         throw new Error('Error al cargar datos del servidor');
                     }
                     
-                    const zonas = await zonasResponse.json();
-                    const mesas = await mesasResponse.json();
+                    const zonasText = await zonasResponse.text();
+                    const mesasText = await mesasResponse.text();
+                    
+                    console.log('📝 Texto recibido (zonas):', zonasText.substring(0, 200));
+                    console.log('📝 Texto recibido (mesas):', mesasText.substring(0, 200));
+                    
+                    let zonas, mesas;
+                    try {
+                        zonas = JSON.parse(zonasText);
+                        mesas = JSON.parse(mesasText);
+                    } catch (e) {
+                        console.error('❌ Error parseando JSON:', e);
+                        throw new Error(`Error al parsear JSON: ${e.message}`);
+                    }
+                    
+                    console.log('📊 Datos recibidos:', {
+                        zonasTipo: typeof zonas,
+                        zonasEsArray: Array.isArray(zonas),
+                        zonasLength: Array.isArray(zonas) ? zonas.length : 'N/A',
+                        mesasTipo: typeof mesas,
+                        mesasEsArray: Array.isArray(mesas),
+                        mesasLength: Array.isArray(mesas) ? mesas.length : 'N/A'
+                    });
                     
                     // VALIDAR DATOS
                     if (!Array.isArray(zonas) || !Array.isArray(mesas)) {
@@ -1718,13 +1750,23 @@
         
         // Fallback para demostración
         window.generateDemoFallback = function() {
+            const demoMesasData = {
+                '1': [
+                    { id: 1, numero: 'M1', capacidad: 2, estado: 'disponible', id_zona: 1 },
+                    { id: 2, numero: 'M2', capacidad: 4, estado: 'disponible', id_zona: 1 }
+                ],
+                '2': [
+                    { id: 3, numero: 'M3', capacidad: 6, estado: 'ocupada', id_zona: 2 }
+                ],
+                '3': []
+            };
             return `
                 <div class="alert alert-info">
                     <h5><i class="bi bi-info-circle"></i> Modo Demostración</h5>
                     <p>Mostrando datos de muestra para visualización.</p>
                     <button class="btn btn-primary" onclick="if (typeof loadInteractiveWithRealData === 'function') loadInteractiveWithRealData()">Conectar a Base de Datos</button>
                 </div>
-                ${generateInteractiveViewWithData()}
+                ${generateInteractiveViewWithData(demoMesasData)}
             `;
         };
         
@@ -2058,7 +2100,7 @@
                 return;
             }
             
-            const saveBtn = document.querySelector(`button[onclick="saveNewMesa(${zoneId})"]`);
+            const saveBtn = document.querySelector(`button[onclick*="saveNewMesa(${zoneId}"]`);
             const originalText = saveBtn.innerHTML;
             saveBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> Creando...';
             saveBtn.disabled = true;
@@ -2069,7 +2111,7 @@
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${window.authToken || localStorage.getItem('authToken') || 'admin-token'}`
+                        'Authorization': `Bearer ${window.authToken || localStorage.getItem('authToken') || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxIiwiZXhwIjoxNzcwMDk2MDY4LCJpYXQiOjE3NzAwMDk2NjgsInJvbGUiOiJhZG1pbmlzdHJhZG9yIn0.Qvg4LDv4K_dbaiOVoojeBGKMMoj7WIozORKThWWlEPo'}`
                     },
                     body: JSON.stringify({
                         numero: numero,

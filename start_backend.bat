@@ -1,0 +1,13 @@
+@echo off
+echo Iniciando backend del Restaurante...
+echo.
+echo Verificando procesos Python existentes...
+tasklist | findstr python.exe >nul
+if %errorlevel% equ 0 (
+    echo Deteniendo procesos Python existentes...
+    taskkill /F /IM python.exe >nul 2>&1
+    timeout /t 2 /nobreak >nul
+)
+echo.
+echo Iniciando servidor backend en puerto 5000...
+"C:\Users\Usuario\AppData\Local\Programs\Python\Python311\python.exe" backend\app.py

@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Diagnóstico API Backend</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="container mt-4">
+    <h1>🔍 Diagnóstico API Backend</h1>
+    <div id="results"></div>
+
+    <script>
+        const results = document.getElementById('results');
+
+        async function testAPI(url, method = 'GET', headers = {}) {
+            results.innerHTML += `<div class="alert alert-secondary">
+                <strong>Probando:</strong> ${url}<br>
+                <strong>Método:</strong> ${method}<br>
+                <strong>Headers:</strong> ${JSON.stringify(headers)}<br>
+            </div>`;
+
+            try {
+                const response = await fetch(url, { method, headers });
+                results.innerHTML += `<div class="alert alert-info">
+                    <strong>Status:</strong> ${response.status} ${response.statusText}<br>
+                    <strong>OK:</strong> ${response.ok}<br>
+                    <strong>Headers:</strong> ${Object.fromEntries(response.headers.entries())}
+                </div>`;
+
+                const text = await response.text();
+                results.innerHTML += `<div class="alert alert-light">
+                    <strong>Response Text (primer 500 chars):</strong><br>
+                    <pre>${text.substring(0, 500)}${text.length > 500 ? '...' : ''}</pre>
+                </div>`;
+
+                try {
+                    const json = JSON.parse(text);
+                    results.innerHTML += `<div class="alert alert-success">
+                        <strong>JSON válido:</strong> ✅<br>
+                        <strong>Tipo:</strong> ${Array.isArray(json) ? 'Array' : typeof json}<br>
+                        <strong>Length:</strong> ${Array.isArray(json) ? json.length : 'N/A'}
+                    </div>`;
+                } catch (e) {
+                    results.innerHTML += `<div class="alert alert-danger">
+                        <strong>JSON inválido:</strong> ❌ ${e.message}
+                    </div>`;
+                }
+
+                return { ok: response.ok, data: text };
+            } catch (error) {
+                results.innerHTML += `<div class="alert alert-danger">
+                    <strong>Error:</strong> ${error.message}<br>
+                    <strong>Stack:</strong> ${error.stack}
+                </div>`;
+                return { ok: false, error: error.message };
+            }
+        }
+
+        async function runTests() {
+            results.innerHTML = '';
+
+            // Test 1: Sin headers
+            await testAPI('http://localhost:5000/api/zonas');
+            await testAPI('http://localhost:5000/api/mesas');
+
+            // Test 2: Con headers básicos
+            await testAPI('http://localhost:5000/api/zonas', 'GET', {
+                'Content-Type': 'application/json'
+            });
+
+            // Test 3: Con token falso
+            await testAPI('http://localhost:5000/api/zonas', 'GET', {
+                'Content-Type': 'application/json',
+                'Authorization': 'Bearer fake_token'
+            });
+
+            // Test 4: Verificar token en storage
+            const token = localStorage.getItem('token') || sessionStorage.getItem('token');
+            if (token) {
+                results.innerHTML += `<div class="alert alert-info">
+                    <strong>Token encontrado:</strong> ✅<br>
+                    <strong>Longitud:</strong> ${token.length}<br>
+                    <strong>Primeros 20 chars:</strong> ${token.substring(0, 20)}...
+                </div>`;
+                await testAPI('http://localhost:5000/api/zonas', 'GET', {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                });
+            } else {
+                results.innerHTML += `<div class="alert alert-warning">
+                    <strong>No hay token</strong> en localStorage o sessionStorage
+                </div>`;
+            }
+        }
+
+        runTests();
+    </script>
+</body>
+</html>
