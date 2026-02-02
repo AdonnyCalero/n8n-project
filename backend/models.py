@@ -117,7 +117,7 @@ class Database:
             elif fetch_all:
                 result = cursor.fetchall()
             else:
-                result = None
+                result = True
             
             cursor.close()
             
@@ -125,7 +125,7 @@ class Database:
             if result and isinstance(result, list):
                 for row in result:
                     self._serialize_datetime_fields(row)
-            elif result:
+            elif result and result != True:
                 self._serialize_datetime_fields(result)
             
             return result

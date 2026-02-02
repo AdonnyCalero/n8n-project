@@ -1134,32 +1134,46 @@ def update_table(table_id):
 def delete_table(table_id):
     user_id = get_jwt_identity()
     
-    # Verificar que es administrador
-    query = "SELECT rol FROM usuarios WHERE id = %s"
-    user = db.execute_query(query, (user_id,), fetch_one=True)
-    
-    if not user or user['rol'] != 'administrador':
-        return jsonify({'error': 'No autorizado'}), 403
-    
-    # Verificar si hay reservas asociadas
-    reservation_check = """
-        SELECT COUNT(*) as count FROM reservas 
-        WHERE id_mesa = %s AND fecha >= CURDATE() 
-        AND estado != 'cancelada'
-    """
-    reservation_count = db.execute_query(reservation_check, (table_id,), fetch_one=True)
-    
-    if reservation_count and reservation_count['count'] > 0:
-        return jsonify({'error': 'No se puede eliminar una mesa con reservas activas'}), 400
-    
-    # Eliminar mesa
-    delete_query = "DELETE FROM mesas WHERE id = %s"
-    success = db.execute_query(delete_query, (table_id,), fetch_all=False)
-    
-    if success:
-        return jsonify({'message': 'Mesa eliminada correctamente'})
-    else:
-        return jsonify({'error': 'Error al eliminar mesa'}), 500
+    try:
+        # Verificar que es administrador
+        query = "SELECT rol FROM usuarios WHERE id = %s"
+        user = db.execute_query(query, (user_id,), fetch_one=True)
+        
+        if not user or user['rol'] != 'administrador':
+            return jsonify({'error': 'No autorizado'}), 403
+        
+        # Verificar que la mesa existe
+        mesa_check = "SELECT id, numero FROM mesas WHERE id = %s"
+        mesa = db.execute_query(mesa_check, (table_id,), fetch_one=True)
+        
+        if not mesa:
+            return jsonify({'error': 'Mesa no encontrada'}), 404
+        
+        # Verificar si hay reservas asociadas
+        reservation_check = """
+            SELECT COUNT(*) as count FROM reservas 
+            WHERE id_mesa = %s AND fecha >= CURDATE() 
+            AND estado != 'cancelada'
+        """
+        reservation_count = db.execute_query(reservation_check, (table_id,), fetch_one=True)
+        
+        if reservation_count and reservation_count['count'] > 0:
+            return jsonify({'error': 'No se puede eliminar una mesa con reservas activas'}), 400
+        
+        # Eliminar mesa
+        delete_query = "DELETE FROM mesas WHERE id = %s"
+        success = db.execute_query(delete_query, (table_id,), fetch_all=False)
+        
+        if success:
+            return jsonify({'message': 'Mesa eliminada correctamente', 'mesa_eliminada': mesa['numero']})
+        else:
+            return jsonify({'error': 'Error al eliminar mesa'}), 500
+            
+    except Exception as e:
+        print(f"Error al eliminar mesa {table_id}: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'error': f'Error interno del servidor: {str(e)}'}), 500
 
 @app.route('/api/reservas/<int:reservation_id>', methods=['PUT'])
 @jwt_required()

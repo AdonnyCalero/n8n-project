@@ -3,13 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Restaurante - Sistema de Reservas</title>
-    <!-- Bootstrap 5.3.8 CSS -->
+    <title>Sistema de Reservas de Restaurante</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Bootstrap Icons -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.2/font/bootstrap-icons.min.css">
-    <!-- Custom CSS -->
     <link rel="stylesheet" href="css/custom-bootstrap.css">
+    
+    <!-- SweetAlert2 CSS -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@sweetalert2/theme-borderless/borderless.css">
     <style>
         .section {
             display: none;
@@ -441,6 +442,9 @@
 
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- SweetAlert2 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.all.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@sweetalert2/theme-borderless/borderless.js"></script>
     <!-- Custom JS -->
     <script src="js/app-clean.js?v=4.7"></script>
     <script src="js/admin-functions.js"></script>
@@ -1119,6 +1123,9 @@
                                 </form>
                             </div>
                             <div class="modal-footer">
+                                <button type="button" class="btn btn-danger fw-bold me-2" onclick="deleteMesa(${mesaId})">
+                                    <i class="bi bi-trash3-fill"></i>  Eliminar Mesa
+                                </button>
                                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">❌ Cancelar</button>
                                 <button type="button" class="btn btn-success" onclick="saveMesaChanges(${mesaId})">
                                     <i class="bi bi-check-circle"></i> 💾 Guardar Cambios
@@ -1307,6 +1314,114 @@
             }
         };
         
+        window.deleteMesa = async function(mesaId) {
+            Swal.fire({
+                title: '⚠️ ¿Estás seguro?',
+                text: 'Esta acción NO se puede deshacer y eliminará la mesa permanentemente de la base de datos.',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonColor: 'green',
+                cancelButtonColor: 'red',
+                confirmButtonText: '🗑️ Sí, Eliminar',
+                cancelButtonText: '❌ Cancelar',
+                background: '#fff',
+                customClass: {
+                    popup: 'swal2-popup',
+                    confirmButton: 'btn-danger fw-bold',
+                    cancelButton: 'btn-secondary'
+                }
+            }).then(async (result) => {
+                if (!result.isConfirmed) {
+                    return;
+                }
+                
+                const deleteBtn = document.querySelector(`button[onclick="deleteMesa(${mesaId})"]`);
+                const originalText = deleteBtn.innerHTML;
+                deleteBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> Eliminando...';
+                deleteBtn.disabled = true;
+                
+                try {
+                    let authToken = window.authToken || localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
+                    
+                    if (!authToken) {
+                        throw new Error('No hay token de autenticación. Por favor inicie sesión como administrador.');
+                    }
+                    
+                    console.log('Intentando eliminar mesa:', mesaId);
+                    
+                    const response = await fetch(`http://localhost:5000/api/mesas/${mesaId}`, {
+                        method: 'DELETE',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${authToken}`
+                        }
+                    });
+                    
+                    const responseData = await response.json();
+                    
+                    if (response.ok) {
+                        Swal.fire({
+                            title: '✅ Eliminado',
+                            text: responseData.mensaje || 'La mesa ha sido eliminada correctamente.',
+                            icon: 'success',
+                            timer: 2000,
+                            timerProgressBar: true,
+                            showConfirmButton: false
+                        });
+                        
+                        bootstrap.Modal.getInstance(document.getElementById('editMesaModal')).hide();
+                        
+                        await new Promise(resolve => setTimeout(resolve, 500));
+                        
+                        if (typeof loadInteractiveWithRealData === 'function') {
+                            loadInteractiveWithRealData();
+                        } else {
+                            location.reload();
+                        }
+                    } else if (response.status === 403) {
+                        Swal.fire({
+                            title: '❌ Sin Permisos',
+                            text: 'No tienes permisos para eliminar mesas',
+                            icon: 'error',
+                            confirmButtonColor: '#d33'
+                        });
+                    } else if (response.status === 400 && responseData.error && responseData.error.includes('reservas')) {
+                        Swal.fire({
+                            title: '⚠️ Reservas Activas',
+                            text: responseData.error || 'Esta mesa tiene reservas activas',
+                            icon: 'warning',
+                            confirmButtonColor: '#ffc107'
+                        });
+                    } else if (response.status === 404) {
+                        Swal.fire({
+                            title: '❌ Mesa No Encontrada',
+                            text: 'La mesa especificada no existe en el sistema',
+                            icon: 'error',
+                            confirmButtonColor: '#d33'
+                        });
+                    } else {
+                        Swal.fire({
+                            title: '❌ Error',
+                            text: responseData.error || 'Error al eliminar mesa',
+                            icon: 'error',
+                            confirmButtonColor: '#d33'
+                        });
+                    }
+                } catch (error) {
+                    console.error('Error al eliminar mesa:', error);
+                    Swal.fire({
+                        title: '❌ Error',
+                        text: 'Error al eliminar mesa. Por favor intente nuevamente.',
+                        icon: 'error',
+                        confirmButtonColor: '#d33'
+                    });
+                } finally {
+                    deleteBtn.innerHTML = originalText;
+                    deleteBtn.disabled = false;
+                }
+            });
+        };
+         
         window.saveMesaChanges = async function(mesaId) {
             const capacidad = document.getElementById('capacitySlider').value;
             const estado = document.querySelector('input[name="estado"]:checked').value;

@@ -932,3 +932,77 @@
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
     background: #0b5ed7;
 }
+/* SweetAlert2 Custom Styles */
+.swal2-popup {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    border-radius: 15px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+}
+
+.swal2-popup .swal2-icon {
+    margin: 0 auto;
+}
+
+.swal2-popup .swal2-title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    margin: 0 0 1rem 0;
+}
+
+.swal2-popup .swal2-text {
+    font-size: 1.1rem;
+    color: #6c757d;
+    margin: 0 0 1.5rem 0;
+}
+
+.swal2-popup .swal2-actions {
+    margin-top: 1.5rem;
+}
+
+.swal2-popup button {
+    padding: 0.5rem 1.5rem;
+    font-size: 1rem;
+    font-weight: 600;
+    border-radius: 8px;
+    border: none;
+    transition: all 0.3s ease;
+    margin: 0 0.5rem;
+}
+
+.swal2-popup button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+}
+
+.swal2-popup button:focus {
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.5);
+}
+
+/* SweetAlert2 Icon Styles */
+.swal2-icon.swal2-warning {
+    border-color: #ffc107;
+    color: #ffc107;
+}
+
+.swal2-icon.swal2-success {
+    border-color: #28a745;
+    color: #28a745;
+}
+
+.swal2-icon.swal2-error {
+    border-color: #dc3545;
+    color: #dc3545;
+}
+
+.swal2-icon.swal2-info {
+    border-color: #17a2b8;
+    color: #17a2b8;
+}
+
+/* Progress Bar */
+.swal2-timer-progress-bar {
+    background: linear-gradient(90deg, #28a745, #20c997);
+    border-radius: 5px;
+    height: 6px;
+}
