@@ -1051,6 +1051,10 @@
         };
         
         window.editMesaInteractive = function(mesaId, numero, capacidad, estado) {
+            // Guardar el estado actual de la mesa para validaciones
+            window.currentMesaState = estado;
+            window.currentMesaId = mesaId;
+            
             // Crear modal de edición
             const modalHtml = `
                 <div class="modal fade" id="editMesaModal" tabindex="-1">
@@ -1258,6 +1262,9 @@
                         document.querySelectorAll('.state-option-edit').forEach(opt => opt.classList.remove('active'));
                         this.parentElement.classList.add('active');
                         updateMesaPreview();
+                        
+                        // Actualizar el estado global cuando el usuario lo cambia
+                        window.currentMesaState = this.value;
                     });
                 });
                 
@@ -1315,13 +1322,97 @@
         };
         
         window.deleteMesa = async function(mesaId) {
+            // Obtener el estado actual de la mesa
+            let currentEstado = window.currentMesaState;
+            
+            // Si el estado no está en la variable global, obtenerlo del backend
+            if (!currentEstado) {
+                try {
+                    const mesasResponse = await fetch('http://localhost:5000/api/mesas');
+                    const todasMesas = await mesasResponse.json();
+                    const mesaActual = todasMesas.find(m => m.id === mesaId);
+                    
+                    if (mesaActual) {
+                        currentEstado = mesaActual.estado;
+                        window.currentMesaState = currentEstado;
+                    }
+                } catch (error) {
+                    console.error('Error al obtener estado de la mesa:', error);
+                }
+            }
+            
+            // Validar estado de la mesa
+            const estadosPermitidos = ['disponible', 'mantenimiento'];
+            
+            if (currentEstado === 'reservada') {
+                Swal.fire({
+                    title: '📅 Mesa Reservada',
+                    html: `
+                        <div style="text-align: left; padding: 10px 0;">
+                            <p style="font-size: 1.1rem; margin: 0;">
+                                <strong>❌ No se puede eliminar esta mesa porque está RESERVADA.</strong>
+                            </p>
+                            <p style="font-size: 1rem; color: #666;">
+                                Para eliminar una mesa reservada, primero debe:<br>
+                                1. Cancelar la reserva asociada<br>
+                                2. O esperar a que la reserva termine
+                            </p>
+                        </div>
+                    `,
+                    icon: 'warning',
+                    confirmButtonColor: '#ffc107',
+                    confirmButtonText: 'Entendido',
+                    background: '#fff',
+                    customClass: {
+                        popup: 'swal2-popup'
+                    }
+                });
+                return;
+            }
+            
+            if (currentEstado === 'ocupada') {
+                Swal.fire({
+                    title: '🍽️ Mesa Ocupada',
+                    html: `
+                        <div style="text-align: left; padding: 10px 0;">
+                            <p style="font-size: 1.1rem; margin: 0;">
+                                <strong>❌ No se puede eliminar esta mesa porque está OCUPADA.</strong>
+                            </p>
+                            <p style="font-size: 1rem; color: #666;">
+                                Para eliminar una mesa ocupada, primero debe:<br>
+                                1. Liberar la mesa (clientes se han ido)<br>
+                                2. O esperar a que la ocupación termine
+                            </p>
+                        </div>
+                    `,
+                    icon: 'error',
+                    confirmButtonColor: '#dc3545',
+                    confirmButtonText: 'Entendido',
+                    background: '#fff',
+                    customClass: {
+                        popup: 'swal2-popup'
+                    }
+                });
+                return;
+            }
+            
+            // Si el estado es válido, mostrar confirmación
             Swal.fire({
                 title: '⚠️ ¿Estás seguro?',
-                text: 'Esta acción NO se puede deshacer y eliminará la mesa permanentemente de la base de datos.',
+                html: `
+                    <div style="text-align: left; padding: 10px 0;">
+                        <p style="font-size: 1.1rem; margin: 0;">
+                            Esta acción <strong>NO se puede deshacer</strong> y eliminará la mesa permanentemente de la base de datos.
+                        </p>
+                        <p style="font-size: 0.95rem; color: #666; margin-bottom: 0;">
+                            Estado actual: <strong>${currentEstado || 'Desconocido'}</strong>
+                        </p>
+                    </div>
+                `,
                 icon: 'warning',
                 showCancelButton: true,
-                confirmButtonColor: 'green',
-                cancelButtonColor: 'red',
+                confirmButtonColor: '#d33',
+                cancelButtonColor: '#3085d',
                 confirmButtonText: '🗑️ Sí, Eliminar',
                 cancelButtonText: '❌ Cancelar',
                 background: '#fff',
