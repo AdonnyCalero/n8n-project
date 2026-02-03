@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify, send_from_directory
+from flask import Flask, request, jsonify, send_from_directory, send_file
 from flask_cors import CORS
 from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity
 import os
@@ -745,7 +745,7 @@ def process_excel_preorders():
         'prepedidos_con_errores': resultados['total_errores']
     })
 
-@app.route('/api/platos/exportar/plantilla', methods=['GET'])
+@app.route('/api/prepedidos/exportar/plantilla', methods=['GET'])
 @jwt_required()
 def export_preorder_template():
     """
@@ -823,9 +823,8 @@ def export_preorder_template():
     
     output.seek(0)
     
-    return send_from_directory(
-        directory='',
-        filename=output,
+    return send_file(
+        output,
         as_attachment=True,
         download_name='plantilla_prepedidos.xlsx',
         mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
@@ -835,6 +834,25 @@ def export_preorder_template():
 def get_menu():
     menu_items = menu_manager.get_menu_items()
     return jsonify(menu_items)
+
+@app.route('/api/admin/platos', methods=['GET'])
+@jwt_required()
+def get_all_platos_admin():
+    """
+    Obtener todos los platos para el panel de administrador
+    Incluye platos no disponibles y sin stock
+    """
+    user_id = get_jwt_identity()
+    
+    # Verificar que es administrador
+    query = "SELECT rol FROM usuarios WHERE id = %s"
+    user = db.execute_query(query, (user_id,), fetch_one=True)
+    
+    if not user or user['rol'] != 'administrador':
+        return jsonify({'error': 'No autorizado'}), 403
+    
+    platos = menu_manager.get_all_platos()
+    return jsonify(platos)
 
 @app.route('/api/platos/<int:plato_id>/stock', methods=['GET'])
 def check_plato_stock(plato_id):
@@ -929,6 +947,171 @@ def delete_plato(plato_id):
         return jsonify({'message': 'Plato eliminado correctamente'})
     else:
         return jsonify({'error': 'Error al eliminar plato'}), 500
+
+@app.route('/api/platos/importar', methods=['POST'])
+@jwt_required()
+def import_platos_excel():
+    """
+    Importar platos desde un archivo Excel
+    """
+    user_id = get_jwt_identity()
+    
+    # Verificar que es administrador
+    query = "SELECT rol FROM usuarios WHERE id = %s"
+    user = db.execute_query(query, (user_id,), fetch_one=True)
+    
+    if not user or user['rol'] != 'administrador':
+        return jsonify({'error': 'No autorizado'}), 403
+    
+    # Verificar que se haya subido un archivo
+    if 'file' not in request.files:
+        return jsonify({'error': 'No se ha subido ningún archivo'}), 400
+    
+    file = request.files['file']
+    
+    if file.filename == '':
+        return jsonify({'error': 'Nombre de archivo vacío'}), 400
+    
+    # Verificar extensión del archivo
+    if not file.filename.endswith(('.xlsx', '.xls')):
+        return jsonify({'error': 'El archivo debe ser un Excel (.xlsx o .xls)'}), 400
+    
+    try:
+        # Leer el archivo Excel
+        df = pd.read_excel(file)
+        
+        # Normalizar nombres de columnas (convertir a minúsculas y quitar espacios)
+        df.columns = df.columns.str.lower().str.strip()
+        
+        # Mapeo de nombres de columnas alternativos a nombres estándar
+        column_mapping = {
+            'id': 'id',
+            'identificador': 'id',
+            'codigo': 'id',
+            'nombre del plato': 'nombre',
+            'nombre': 'nombre',
+            'plato': 'nombre',
+            'precio': 'precio',
+            'valor': 'precio',
+            'categoria': 'categoria',
+            'categoría': 'categoria',
+            'categoria del plato': 'categoria',
+            'tipo': 'categoria',
+            'stock disponible': 'stock_disponible',
+            'stock': 'stock_disponible',
+            'stock_disponible': 'stock_disponible',
+            'cantidad': 'stock_disponible'
+        }
+        
+        # Renombrar columnas usando el mapeo
+        df = df.rename(columns=column_mapping)
+        
+        # Validar estructura del Excel
+        required_columns = ['id', 'nombre', 'stock_disponible']
+        missing_columns = [col for col in required_columns if col not in df.columns]
+        
+        if missing_columns:
+            return jsonify({
+                'error': 'El archivo no tiene las columnas requeridas',
+                'columnas_requeridas': required_columns,
+                'columnas_faltantes': missing_columns,
+                'columnas_encontradas': list(df.columns),
+                'sugerencia': 'Las columnas deben ser: id, nombre, precio, categoria, stock_disponible (o equivalentes)'
+            }), 400
+        
+        # Importar platos
+        results = menu_manager.import_platos_from_excel(df)
+        
+        if results is None:
+            return jsonify({'error': 'Error al procesar el archivo Excel'}), 500
+        
+        return jsonify({
+            'message': 'Platos importados correctamente',
+            'resultados': results
+        }), 200
+        
+    except Exception as e:
+        return jsonify({'error': f'Error al procesar el archivo Excel: {str(e)}'}), 500
+
+@app.route('/api/platos/exportar/plantilla', methods=['GET'])
+@jwt_required()
+def export_platos_template():
+    """
+    Exportar plantilla Excel de platos para editar
+    """
+    user_id = get_jwt_identity()
+    
+    # Verificar que es administrador
+    query = "SELECT rol FROM usuarios WHERE id = %s"
+    user = db.execute_query(query, (user_id,), fetch_one=True)
+    
+    if not user or user['rol'] != 'administrador':
+        return jsonify({'error': 'No autorizado'}), 403
+    
+    try:
+        # Obtener todos los platos
+        platos = menu_manager.get_all_platos()
+        
+        if not platos:
+            # Crear plantilla vacía con ejemplos
+            platos = [
+                {'id': 1, 'nombre': 'Ejemplo: Plato 1', 'precio': 15.00, 'categoria': 'Entradas', 'stock_disponible': 10},
+                {'id': 2, 'nombre': 'Ejemplo: Plato 2', 'precio': 25.50, 'categoria': 'Platos Principales', 'stock_disponible': 15}
+            ]
+        
+        # Crear DataFrame
+        df = pd.DataFrame(platos)
+        
+        # Seleccionar las columnas necesarias
+        df_export = df[['id', 'nombre', 'precio', 'categoria', 'stock_disponible']]
+        
+        # Crear Excel en memoria
+        output = io.BytesIO()
+        
+        with pd.ExcelWriter(output, engine='openpyxl') as writer:
+            df_export.to_excel(writer, sheet_name='Platos', index=False)
+            
+            # Ajustar ancho de columnas
+            worksheet = writer.sheets['Platos']
+            for idx, col in enumerate(df_export.columns, 1):
+                max_length = max(
+                    df_export[col].astype(str).apply(len).max(),
+                    len(str(col))
+                )
+                worksheet.column_dimensions[chr(64 + idx)].width = min(max_length + 2, 50)
+            
+            # Agregar hoja de instrucciones
+            instructions = pd.DataFrame([
+                {'Instrucción': 'INSTRUCCIONES PARA EDITAR EL MENÚ'},
+                {'Instrucción': '--------------------------------------------------'},
+                {'Instrucción': '1. Los IDs de los platos son únicos y no se deben cambiar'},
+                {'Instrucción': '2. Edita el nombre, precio, categoría y stock de los platos existentes'},
+                {'Instrucción': '3. Para agregar nuevos platos, usa un ID nuevo'},
+                {'Instrucción': '4. El stock debe ser un número entero (0 o positivo)'},
+                {'Instrucción': '5. El precio debe ser un número positivo (decimales permitidos)'},
+                {'Instrucción': '6. La categoría puede ser: Entradas, Platos Principales, Postres, Bebidas, etc.'},
+                {'Instrucción': '7. Los IDs se mantienen para conservar la relación con pre-pedidos'},
+                {'Instrucción': ''},
+                {'Instrucción': 'Columnas requeridas:'},
+                {'Instrucción': '- id: Identificador único del plato (NO CAMBIAR si quieres conservar la relación)'},
+                {'Instrucción': '- nombre: Nombre del plato'},
+                {'Instrucción': '- precio: Precio del plato (ejemplo: 15.50)'},
+                {'Instrucción': '- categoria: Categoría del plato (ejemplo: Platos Principales)'},
+                {'Instrucción': '- stock_disponible: Cantidad disponible en stock'}
+            ])
+            instructions.to_excel(writer, sheet_name='Instrucciones', index=False, header=False)
+        
+        output.seek(0)
+        
+        return send_file(
+            output,
+            as_attachment=True,
+            download_name=f'plantilla_platos_{datetime.now().strftime("%Y%m%d_%H%M%S")}.xlsx',
+            mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        )
+        
+    except Exception as e:
+        return jsonify({'error': f'Error al generar plantilla: {str(e)}'}), 500
 
 @app.route('/api/admin/reservas', methods=['GET'])
 @jwt_required()

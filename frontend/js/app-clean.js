@@ -1,7 +1,11 @@
 // Global variables
 let authToken = null;
 let currentUser = null;
-const API_BASE = 'http://localhost:5000/api';
+const API_BASE = window.location.origin + '/api';
+
+// Variables globales para gestión de pre-pedidos
+let selectedTableForReservation = null;
+let menuItemsForPreorder = [];
 
 // Show toast notification
 function showToast(message, type = 'info') {
@@ -31,6 +35,112 @@ function showToast(message, type = 'info') {
     toast.addEventListener('hidden.bs.toast', () => {
         toast.remove();
     });
+}
+
+// Toggle pre-pedidos section
+function togglePreorders() {
+    const checkbox = document.getElementById('enablePreorders');
+    const section = document.getElementById('preordersSection');
+    
+    if (checkbox.checked) {
+        section.style.display = 'block';
+        loadMenuItemsForPreorder();
+    } else {
+        section.style.display = 'none';
+    }
+}
+
+// Load menu items for pre-pedido
+async function loadMenuItemsForPreorder() {
+    try {
+        const response = await fetch(`${API_BASE}/menu`);
+        const menuItems = await response.json();
+        menuItemsForPreorder = menuItems;
+        
+        const container = document.getElementById('menuItemsForPreorder');
+        container.innerHTML = '';
+        
+        menuItems.forEach(item => {
+            const card = document.createElement('div');
+            card.className = 'col-md-6 col-lg-4';
+            card.innerHTML = `
+                <div class="card h-100">
+                    <div class="card-body">
+                        <span class="badge bg-info mb-2">${item.categoria || 'Sin categoría'}</span>
+                        <h6 class="card-title">${item.nombre}</h6>
+                        <p class="card-text">
+                            <small class="text-muted">ID: ${item.id}</small><br>
+                            <strong class="text-success">Precio: $${parseFloat(item.precio || 0).toFixed(2)}</strong><br>
+                            <span class="badge ${item.stock_disponible > 0 ? 'bg-success' : 'bg-danger'}">
+                                Stock: ${item.stock_disponible}
+                            </span>
+                        </p>
+                        <div class="input-group">
+                            <input type="number" 
+                                   class="form-control preorder-quantity" 
+                                   id="preorder_${item.id}" 
+                                   min="0" 
+                                   max="${item.stock_disponible}" 
+                                   placeholder="Cantidad"
+                                   onchange="updatePreorderTotal()">
+                            <span class="input-group-text">unidades</span>
+                        </div>
+                    </div>
+                </div>
+            `;
+            container.appendChild(card);
+        });
+    } catch (error) {
+        console.error('Error al cargar menú para pre-pedido:', error);
+        showToast('Error al cargar menú', 'error');
+    }
+}
+
+// Update pre-pedido total
+function updatePreorderTotal() {
+    const inputs = document.querySelectorAll('.preorder-quantity');
+    let total = 0;
+    let totalItems = 0;
+    
+    inputs.forEach(input => {
+        const quantity = parseInt(input.value) || 0;
+        const platoId = parseInt(input.id.replace('preorder_', ''));
+        const plato = menuItemsForPreorder.find(p => p.id === platoId);
+        
+        if (plato && quantity > 0) {
+            total += quantity * plato.precio;
+            totalItems += quantity;
+        }
+    });
+    
+    // Actualizar resumen si existe
+    const summaryDiv = document.getElementById('preorderSummary');
+    if (summaryDiv) {
+        summaryDiv.innerHTML = `
+            <strong>Resumen del Pre-pedido:</strong><br>
+            • ${totalItems} platos seleccionados<br>
+            • Total estimado: $${total.toFixed(2)}
+        `;
+    }
+}
+
+// Get selected pre-pedidos
+function getSelectedPreorders() {
+    const inputs = document.querySelectorAll('.preorder-quantity');
+    const preorders = [];
+    
+    inputs.forEach(input => {
+        const quantity = parseInt(input.value) || 0;
+        if (quantity > 0) {
+            const platoId = parseInt(input.id.replace('preorder_', ''));
+            preorders.push({
+                id_plato: platoId,
+                cantidad: quantity
+            });
+        }
+    });
+    
+    return preorders;
 }
 
 // Section management
@@ -66,6 +176,97 @@ function showSection(sectionId) {
         loadDashboard();
         // No cargar otros datos aquí, se cargarán al hacer clic en cada tab
     }
+}
+
+// Load zones
+async function loadZones() {
+    try {
+        const response = await fetch(`${API_BASE}/zonas`);
+        const zones = await response.json();
+        
+        const zonaSelect = document.getElementById('reservaZona');
+        if (zonaSelect) {
+            zonaSelect.innerHTML = '<option value="">Cualquier zona</option>';
+            zones.forEach(zona => {
+                const option = document.createElement('option');
+                option.value = zona.id;
+                option.textContent = zona.nombre;
+                zonaSelect.appendChild(option);
+            });
+        }
+    } catch (error) {
+        console.error('Error al cargar zonas:', error);
+    }
+}
+
+// Check availability
+async function checkAvailability() {
+    try {
+        const fecha = document.getElementById('reservaFecha').value;
+        const hora = document.getElementById('reservaHora').value;
+        const comensales = parseInt(document.getElementById('reservaComensales').value);
+        const id_zona = document.getElementById('reservaZona').value || null;
+        
+        if (!fecha || !hora) {
+            showToast('Por selecciona fecha y hora', 'error');
+            return;
+        }
+        
+        const params = new URLSearchParams({
+            fecha,
+            hora,
+            comensales,
+            ...(id_zona && { id_zona })
+        });
+        
+        const response = await fetch(`${API_BASE}/disponibilidad?${params}`);
+        const data = await response.json();
+        
+        const availableTablesDiv = document.getElementById('availableTables');
+        const tablesListDiv = document.getElementById('tablesList');
+        
+        if (data.mesas_disponibles && data.mesas_disponibles.length > 0) {
+            tablesListDiv.innerHTML = '';
+            
+            data.mesas_disponibles.forEach(table => {
+                const col = document.createElement('div');
+                col.className = 'col-md-4';
+                col.innerHTML = `
+                    <div class="card">
+                        <div class="card-body text-center">
+                            <h5>Mesa ${table.numero}</h5>
+                            <p>Capacidad: ${table.capacidad} personas</p>
+                            <button class="btn btn-primary" onclick="selectTable(${table.id}, ${table.numero}, ${table.capacidad}, '${table.zona_nombre || ''}')">
+                                Seleccionar
+                            </button>
+                        </div>
+                    </div>
+                `;
+                tablesListDiv.appendChild(col);
+            });
+            
+            availableTablesDiv.style.display = 'block';
+        } else {
+            availableTablesDiv.style.display = 'block';
+            tablesListDiv.innerHTML = '<div class="alert alert-warning">No hay mesas disponibles para los parámetros seleccionados</div>';
+        }
+    } catch (error) {
+        console.error('Error al verificar disponibilidad:', error);
+        showToast('Error al verificar disponibilidad', 'error');
+    }
+}
+
+// Select table
+function selectTable(id, numero, capacidad, zonaNombre) {
+    selectedTableForReservation = { id, numero, capacidad, zonaNombre };
+    
+    const selectedTableDiv = document.getElementById('selectedTable');
+    const selectedTableInfo = document.getElementById('selectedTableInfo');
+    
+    selectedTableInfo.textContent = `Mesa ${numero} (${capacidad} personas${zonaNombre ? ' - ' + zonaNombre : ''})`;
+    selectedTableDiv.style.display = 'block';
+    
+    showToast(`Mesa ${numero} seleccionada`, 'success');
 }
 
 // Load user's reservations
@@ -405,6 +606,9 @@ document.addEventListener('DOMContentLoaded', function() {
         updateUIForAuthenticatedUser();
     }
     
+    // Load zones
+    loadZones();
+    
     // Login form
     const loginForm = document.getElementById('loginForm');
     if (loginForm) {
@@ -422,6 +626,76 @@ document.addEventListener('DOMContentLoaded', function() {
     if (reservaFecha) {
         reservaFecha.setAttribute('min', today);
     }
+    
+    // Reservation form handler
+    const reservationForm = document.getElementById('reservationForm');
+    if (reservationForm) {
+        reservationForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            if (!authToken) {
+                showToast('Debes iniciar sesión para hacer una reserva', 'error');
+                showSection('login');
+                return;
+            }
+            
+            if (!selectedTableForReservation) {
+                showToast('Por favor selecciona una mesa', 'error');
+                return;
+            }
+            
+            const data = {
+                id_mesa: selectedTableForReservation.id,
+                fecha: document.getElementById('reservaFecha').value,
+                hora: document.getElementById('reservaHora').value,
+                numero_comensales: parseInt(document.getElementById('reservaComensales').value),
+                observaciones: document.getElementById('reservaObservaciones').value
+            };
+            
+            // Agregar pre-pedidos si están habilitados
+            const enablePreorders = document.getElementById('enablePreorders');
+            if (enablePreorders && enablePreorders.checked) {
+                data.preorders = getSelectedPreorders();
+            }
+            
+            try {
+                const response = await fetch(`${API_BASE}/reservas`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${authToken}`
+                    },
+                    body: JSON.stringify(data)
+                });
+                
+                if (response.ok) {
+                    const result = await response.json();
+                    showToast('Reserva creada exitosamente', 'success');
+                    
+                    // Limpiar formulario
+                    reservationForm.reset();
+                    selectedTableForReservation = null;
+                    document.getElementById('selectedTable').style.display = 'none';
+                    document.getElementById('availableTables').style.display = 'none';
+                    
+                    // Limpiar pre-pedidos
+                    if (enablePreorders) {
+                        enablePreorders.checked = false;
+                        document.getElementById('preordersSection').style.display = 'none';
+                    }
+                    
+                    // Ir a mis reservas
+                    showSection('mis-reservas');
+                } else {
+                    const error = await response.json();
+                    showToast(error.error || 'Error al crear reserva', 'error');
+                }
+            } catch (error) {
+                console.error('Error al crear reserva:', error);
+                showToast('Error de conexión', 'error');
+            }
+        });
+    }
 });
 
 // Make functions globally available
@@ -430,3 +704,8 @@ window.showToast = showToast;
 window.login = login;
 window.logout = logout;
 window.loadTablesManagement = loadTablesManagement;
+window.togglePreorders = togglePreorders;
+window.updatePreorderTotal = updatePreorderTotal;
+window.checkAvailability = checkAvailability;
+window.selectTable = selectTable;
+window.loadZones = loadZones;

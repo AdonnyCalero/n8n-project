@@ -4,6 +4,7 @@ import bcrypt
 from datetime import datetime, timedelta
 import json
 import os
+import pandas as pd
 from dotenv import load_dotenv
 
 # Cargar variables de entorno
@@ -562,3 +563,99 @@ class MenuManager:
         
         note['detalles'] = details
         return note
+    
+    def import_platos_from_excel(self, df):
+        """
+        Importa platos desde un DataFrame de pandas
+        El DataFrame debe tener las columnas: id, nombre, stock_disponible, precio, categoria
+        Los IDs se mantienen para actualizar platos existentes
+        """
+        try:
+            if not self.db.connection or not self.db.connection.is_connected():
+                self.db.connect()
+            
+            self.db.connection.autocommit = False
+            cursor = self.db.connection.cursor()
+            
+            results = {
+                'actualizados': 0,
+                'creados': 0,
+                'errores': [],
+                'procesados': 0
+            }
+            
+            for index, row in df.iterrows():
+                try:
+                    plato_id = int(row['id']) if pd.notna(row['id']) else None
+                    nombre = str(row['nombre']).strip() if pd.notna(row['nombre']) else None
+                    stock = int(row['stock_disponible']) if pd.notna(row['stock_disponible']) else 0
+                    precio = float(row['precio']) if pd.notna(row['precio']) else 0.0
+                    categoria = str(row['categoria']).strip() if pd.notna(row['categoria']) else 'General'
+                    
+                    if not nombre:
+                        results['errores'].append(f"Fila {index+1}: Nombre del plato es requerido")
+                        continue
+                    
+                    if stock < 0:
+                        results['errores'].append(f"Fila {index+1}: Stock no puede ser negativo")
+                        continue
+                    
+                    if precio < 0:
+                        results['errores'].append(f"Fila {index+1}: Precio no puede ser negativo")
+                        continue
+                    
+                    if plato_id:
+                        check_query = "SELECT id FROM platos WHERE id = %s"
+                        cursor.execute(check_query, (plato_id,))
+                        existing = cursor.fetchone()
+                        
+                        if existing:
+                            update_query = """
+                                UPDATE platos 
+                                SET nombre = %s, stock_disponible = %s, stock_maximo = %s, 
+                                    precio = %s, categoria = %s, disponible = TRUE
+                                WHERE id = %s
+                            """
+                            cursor.execute(update_query, (nombre, stock, stock, precio, categoria, plato_id))
+                            results['actualizados'] += 1
+                        else:
+                            insert_query = """
+                                INSERT INTO platos (nombre, stock_disponible, stock_maximo, disponible, precio, categoria)
+                                VALUES (%s, %s, %s, TRUE, %s, %s)
+                            """
+                            cursor.execute(insert_query, (nombre, stock, stock, precio, categoria))
+                            results['creados'] += 1
+                    else:
+                        insert_query = """
+                            INSERT INTO platos (nombre, stock_disponible, stock_maximo, disponible, precio, categoria)
+                            VALUES (%s, %s, %s, TRUE, %s, %s)
+                        """
+                        cursor.execute(insert_query, (nombre, stock, stock, precio, categoria))
+                        results['creados'] += 1
+                    
+                    results['procesados'] += 1
+                    
+                except Exception as e:
+                    results['errores'].append(f"Fila {index+1}: Error al procesar - {str(e)}")
+                    continue
+            
+            self.db.connection.commit()
+            cursor.close()
+            return results
+            
+        except Exception as e:
+            self.db.connection.rollback()
+            if 'cursor' in locals():
+                cursor.close()
+            print(f"Error al importar platos: {e}")
+            return None
+        finally:
+            if self.db.connection:
+                self.db.connection.autocommit = True
+    
+    def get_all_platos(self):
+        """
+        Obtiene todos los platos (incluyendo los no disponibles)
+        """
+        query = "SELECT * FROM platos ORDER BY id"
+        return self.db.execute_query(query)

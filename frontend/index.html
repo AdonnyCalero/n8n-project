@@ -214,6 +214,26 @@
                                     <textarea class="form-control" id="reservaObservaciones" rows="3"></textarea>
                                 </div>
 
+                                <!-- Pre-pedidos opcionales -->
+                                <div class="mb-4">
+                                    <div class="card bg-light">
+                                        <div class="card-header">
+                                            <h6 class="mb-0">
+                                                <input type="checkbox" class="form-check-input" id="enablePreorders" onchange="togglePreorders()">
+                                                <label class="form-check-label ms-2" for="enablePreorders">
+                                                    <i class="bi bi-basket"></i> Hacer Pre-pedido de Platos (Opcional)
+                                                </label>
+                                            </h6>
+                                        </div>
+                                        <div class="card-body" id="preordersSection" style="display: none;">
+                                            <div id="menuItemsForPreorder" class="row g-3"></div>
+                                            <div class="alert alert-info mt-3 mb-0">
+                                                <small><i class="bi bi-info-circle"></i> Selecciona los platos y cantidad para hacer un pre-pedido. Los IDs se mantienen para garantizar la consistencia con el menú.</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
                                 <div class="row">
                                     <div class="col-12">
                                         <button type="submit" class="btn btn-primary w-100" id="submitReservation">
