@@ -163,6 +163,7 @@ async function loadMenuManagement() {
         // Llenar tabla de platos
         const tbody = container.querySelector('tbody');
         menuItems.forEach(item => {
+            const isDisponible = item.disponible && item.stock_disponible > 0;
             const row = document.createElement('tr');
             row.innerHTML = `
                 <td><strong>${item.id}</strong></td>
@@ -170,7 +171,7 @@ async function loadMenuManagement() {
                 <td><span class="badge bg-info">${item.categoria || 'Sin categoría'}</span></td>
                 <td><strong class="text-success">$${parseFloat(item.precio || 0).toFixed(2)}</strong></td>
                 <td><span class="badge ${item.stock_disponible > 0 ? 'bg-success' : 'bg-danger'}">${item.stock_disponible}</span></td>
-                <td><span class="badge ${item.disponible ? 'bg-success' : 'bg-danger'}">${item.disponible ? 'Disponible' : 'No disponible'}</span></td>
+                <td><span class="badge ${isDisponible ? 'bg-success' : 'bg-danger'}">${isDisponible ? 'Disponible' : 'No disponible'}</span></td>
             `;
             tbody.appendChild(row);
         });

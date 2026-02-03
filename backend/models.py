@@ -609,28 +609,33 @@ class MenuManager:
                         cursor.execute(check_query, (plato_id,))
                         existing = cursor.fetchone()
                         
+                        # Si el stock es 0, automáticamente marcar como no disponible
+                        is_disponible = stock > 0
+                        
                         if existing:
                             update_query = """
                                 UPDATE platos 
                                 SET nombre = %s, stock_disponible = %s, stock_maximo = %s, 
-                                    precio = %s, categoria = %s, disponible = TRUE
+                                    precio = %s, categoria = %s, disponible = %s
                                 WHERE id = %s
                             """
-                            cursor.execute(update_query, (nombre, stock, stock, precio, categoria, plato_id))
+                            cursor.execute(update_query, (nombre, stock, stock, precio, categoria, is_disponible, plato_id))
                             results['actualizados'] += 1
                         else:
                             insert_query = """
                                 INSERT INTO platos (nombre, stock_disponible, stock_maximo, disponible, precio, categoria)
-                                VALUES (%s, %s, %s, TRUE, %s, %s)
+                                VALUES (%s, %s, %s, %s, %s, %s)
                             """
-                            cursor.execute(insert_query, (nombre, stock, stock, precio, categoria))
+                            cursor.execute(insert_query, (nombre, stock, stock, is_disponible, precio, categoria))
                             results['creados'] += 1
                     else:
+                        # Si el stock es 0, automáticamente marcar como no disponible
+                        is_disponible = stock > 0
                         insert_query = """
                             INSERT INTO platos (nombre, stock_disponible, stock_maximo, disponible, precio, categoria)
-                            VALUES (%s, %s, %s, TRUE, %s, %s)
+                            VALUES (%s, %s, %s, %s, %s, %s)
                         """
-                        cursor.execute(insert_query, (nombre, stock, stock, precio, categoria))
+                        cursor.execute(insert_query, (nombre, stock, stock, is_disponible, precio, categoria))
                         results['creados'] += 1
                     
                     results['procesados'] += 1

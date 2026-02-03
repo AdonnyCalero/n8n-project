@@ -1090,14 +1090,15 @@ def export_platos_template():
                 {'Instrucción': '4. El stock debe ser un número entero (0 o positivo)'},
                 {'Instrucción': '5. El precio debe ser un número positivo (decimales permitidos)'},
                 {'Instrucción': '6. La categoría puede ser: Entradas, Platos Principales, Postres, Bebidas, etc.'},
-                {'Instrucción': '7. Los IDs se mantienen para conservar la relación con pre-pedidos'},
+                {'Instrucción': '7. ⚠️ IMPORTANTE: Si el stock es 0, el plato se marcará como NO DISPONIBLE automáticamente'},
+                {'Instrucción': '8. Los IDs se mantienen para conservar la relación con pre-pedidos'},
                 {'Instrucción': ''},
                 {'Instrucción': 'Columnas requeridas:'},
                 {'Instrucción': '- id: Identificador único del plato (NO CAMBIAR si quieres conservar la relación)'},
                 {'Instrucción': '- nombre: Nombre del plato'},
                 {'Instrucción': '- precio: Precio del plato (ejemplo: 15.50)'},
                 {'Instrucción': '- categoria: Categoría del plato (ejemplo: Platos Principales)'},
-                {'Instrucción': '- stock_disponible: Cantidad disponible en stock'}
+                {'Instrucción': '- stock_disponible: Cantidad disponible en stock (0 = No disponible)'}
             ])
             instructions.to_excel(writer, sheet_name='Instrucciones', index=False, header=False)
         
