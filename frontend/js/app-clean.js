@@ -101,6 +101,7 @@ function updatePreorderTotal() {
     const inputs = document.querySelectorAll('.preorder-quantity');
     let total = 0;
     let totalItems = 0;
+    const itemsList = [];
     
     inputs.forEach(input => {
         const quantity = parseInt(input.value) || 0;
@@ -108,12 +109,49 @@ function updatePreorderTotal() {
         const plato = menuItemsForPreorder.find(p => p.id === platoId);
         
         if (plato && quantity > 0) {
-            total += quantity * plato.precio;
+            const subtotal = quantity * plato.precio;
+            total += subtotal;
             totalItems += quantity;
+            itemsList.push({
+                nombre: plato.nombre,
+                cantidad: quantity,
+                precioUnitario: plato.precio,
+                subtotal: subtotal
+            });
         }
     });
     
-    // Actualizar resumen si existe
+    // Actualizar resumen detallado si existe el nuevo contenedor
+    const summaryContainer = document.getElementById('preorderSummaryContainer');
+    const itemsListDiv = document.getElementById('preorderItemsList');
+    const totalAmountSpan = document.getElementById('preorderTotalAmount');
+    
+    if (summaryContainer && itemsListDiv && totalAmountSpan) {
+        if (totalItems > 0) {
+            // Mostrar el contenedor
+            summaryContainer.style.display = 'block';
+            
+            // Generar lista de items
+            let itemsHtml = '';
+            itemsList.forEach(item => {
+                itemsHtml += `
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span>${item.cantidad}x ${item.nombre}</span>
+                        <span class="text-muted">$${item.subtotal.toFixed(2)}</span>
+                    </div>
+                `;
+            });
+            itemsListDiv.innerHTML = itemsHtml;
+            
+            // Actualizar total
+            totalAmountSpan.textContent = `$${total.toFixed(2)}`;
+        } else {
+            // Ocultar si no hay items
+            summaryContainer.style.display = 'none';
+        }
+    }
+    
+    // Mantener compatibilidad con el resumen antiguo si existe
     const summaryDiv = document.getElementById('preorderSummary');
     if (summaryDiv) {
         summaryDiv.innerHTML = `
@@ -178,6 +216,93 @@ function showSection(sectionId) {
     }
 }
 
+// Validación del formulario de reservas
+function validateReservationForm() {
+    const fecha = document.getElementById('reservaFecha').value;
+    const hora = document.getElementById('reservaHora').value;
+    const comensales = document.getElementById('reservaComensales').value;
+    const errors = [];
+    
+    // Validar campos vacíos
+    if (!fecha) {
+        errors.push('❌ La fecha es obligatoria');
+    }
+    
+    if (!hora) {
+        errors.push('❌ La hora es obligatoria');
+    }
+    
+    if (!comensales) {
+        errors.push('❌ El número de comensales es obligatorio');
+    }
+    
+    // Validar fecha no sea en el pasado
+    if (fecha) {
+        const selectedDate = new Date(fecha + 'T00:00:00');
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        
+        if (selectedDate < today) {
+            errors.push('❌ La fecha no puede ser anterior a hoy');
+        }
+    }
+    
+    // Validar horario de atención (12:00 - 23:00)
+    if (hora) {
+        const [hours, minutes] = hora.split(':').map(Number);
+        const timeInMinutes = hours * 60 + minutes;
+        const openingTime = 12 * 60; // 12:00
+        const closingTime = 23 * 60; // 23:00
+        
+        if (timeInMinutes < openingTime || timeInMinutes > closingTime) {
+            errors.push('❌ El horario de atención es de 12:00 a 23:00 hrs');
+        }
+    }
+    
+    // Validar tiempo mínimo de anticipación (1 hora)
+    if (fecha && hora) {
+        const now = new Date();
+        const selectedDateTime = new Date(fecha + 'T' + hora);
+        const diffInHours = (selectedDateTime - now) / (1000 * 60 * 60);
+        
+        if (diffInHours < 1) {
+            errors.push('❌ La reserva debe hacerse con al menos 1 hora de anticipación');
+        }
+    }
+    
+    // Validar número de comensales
+    if (comensales === '' || comensales === null || comensales === undefined) {
+        errors.push('❌ El número de comensales es obligatorio');
+    } else {
+        const numComensales = parseInt(comensales);
+        if (isNaN(numComensales) || numComensales < 1) {
+            errors.push('❌ Debe haber al menos 1 comensal');
+        } else if (numComensales > 20) {
+            errors.push('❌ Para grupos mayores a 20 personas, contacte directamente al restaurante');
+        }
+    }
+    
+    return errors;
+}
+
+// Mostrar errores de validación en el formulario
+function displayValidationErrors(errors) {
+    // Remover mensajes de error previos
+    const existingErrors = document.querySelectorAll('.validation-error');
+    existingErrors.forEach(el => el.remove());
+    
+    if (errors.length === 0) return true;
+    
+    // Mostrar cada error con un toast
+    errors.forEach((error, index) => {
+        setTimeout(() => {
+            showToast(error, 'error');
+        }, index * 300);
+    });
+    
+    return false;
+}
+
 // Load zones
 async function loadZones() {
     try {
@@ -202,15 +327,17 @@ async function loadZones() {
 // Check availability
 async function checkAvailability() {
     try {
+        // Validar el formulario primero
+        const validationErrors = validateReservationForm();
+        if (validationErrors.length > 0) {
+            displayValidationErrors(validationErrors);
+            return;
+        }
+        
         const fecha = document.getElementById('reservaFecha').value;
         const hora = document.getElementById('reservaHora').value;
         const comensales = parseInt(document.getElementById('reservaComensales').value);
         const id_zona = document.getElementById('reservaZona').value || null;
-        
-        if (!fecha || !hora) {
-            showToast('Por selecciona fecha y hora', 'error');
-            return;
-        }
         
         const params = new URLSearchParams({
             fecha,
@@ -236,7 +363,7 @@ async function checkAvailability() {
                         <div class="card-body text-center">
                             <h5>Mesa ${table.numero}</h5>
                             <p>Capacidad: ${table.capacidad} personas</p>
-                            <button class="btn btn-primary" onclick="selectTable(${table.id}, ${table.numero}, ${table.capacidad}, '${table.zona_nombre || ''}')">
+                            <button type="button" class="btn btn-primary" onclick="selectTable(${table.id}, '${table.numero}', ${table.capacidad}, '${table.zona_nombre || ''}')">
                                 Seleccionar
                             </button>
                         </div>
@@ -827,20 +954,59 @@ document.addEventListener('DOMContentLoaded', function() {
         editFecha.setAttribute('min', today);
     }
     
+    // Validación en tiempo real para número de comensales
+    const reservaComensales = document.getElementById('reservaComensales');
+    const comensalesError = document.getElementById('comensalesError');
+    if (reservaComensales) {
+        reservaComensales.addEventListener('input', function() {
+            const value = parseInt(this.value);
+            if (value < 1 || value > 20 || isNaN(value)) {
+                this.classList.add('is-invalid');
+                this.classList.remove('is-valid');
+                if (comensalesError) comensalesError.style.display = 'block';
+            } else {
+                this.classList.remove('is-invalid');
+                this.classList.add('is-valid');
+                if (comensalesError) comensalesError.style.display = 'none';
+            }
+        });
+        
+        // Prevenir valores negativos con las flechas del input
+        reservaComensales.addEventListener('keydown', function(e) {
+            if (e.key === '-' || e.key === 'e' || e.key === 'E') {
+                e.preventDefault();
+            }
+        });
+    }
+    
     // Reservation form handler
     const reservationForm = document.getElementById('reservationForm');
     if (reservationForm) {
         reservationForm.addEventListener('submit', async function(e) {
             e.preventDefault();
             
+            // Validar autenticación
             if (!authToken) {
                 showToast('Debes iniciar sesión para hacer una reserva', 'error');
                 showSection('login');
                 return;
             }
             
+            // Validar campos del formulario
+            const validationErrors = validateReservationForm();
+            if (validationErrors.length > 0) {
+                displayValidationErrors(validationErrors);
+                return;
+            }
+            
+            // Validar que se haya seleccionado una mesa
             if (!selectedTableForReservation) {
-                showToast('Por favor selecciona una mesa', 'error');
+                showToast('Por favor selecciona una mesa antes de confirmar la reserva', 'error');
+                // Desplazarse a la sección de mesas disponibles
+                const availableTablesDiv = document.getElementById('availableTables');
+                if (availableTablesDiv) {
+                    availableTablesDiv.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
                 return;
             }
             
@@ -912,3 +1078,5 @@ window.loadZones = loadZones;
 window.editReservation = editReservation;
 window.saveReservation = saveReservation;
 window.deleteReservation = deleteReservation;
+window.validateReservationForm = validateReservationForm;
+window.displayValidationErrors = displayValidationErrors;
