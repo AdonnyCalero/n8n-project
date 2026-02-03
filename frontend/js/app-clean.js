@@ -354,6 +354,200 @@ async function loadDashboard() {
     }
 }
 
+// Edit reservation
+async function editReservation(reservationId) {
+    try {
+        const token = window.authToken || localStorage.getItem('token') || sessionStorage.getItem('token');
+        
+        // Obtener todas las reservas para encontrar la específica
+        const response = await fetch(`${API_BASE}/admin/reservas`, {
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+        
+        if (!response.ok) {
+            throw new Error('Error al cargar reservas');
+        }
+        
+        const reservations = await response.json();
+        const reservation = reservations.find(r => r.id === reservationId);
+        
+        if (!reservation) {
+            showToast('Reserva no encontrada', 'error');
+            return;
+        }
+        
+        // Llenar el formulario con los datos de la reserva
+        document.getElementById('editReservationId').value = reservation.id;
+        
+        // Formatear fecha para input type="date" (YYYY-MM-DD)
+        let fechaFormateada = '';
+        if (reservation.fecha) {
+            // Si la fecha ya tiene formato YYYY-MM-DD, usarla directamente
+            if (reservation.fecha.match(/^\d{4}-\d{2}-\d{2}$/)) {
+                fechaFormateada = reservation.fecha;
+            } else {
+                // Convertir de otros formatos a YYYY-MM-DD
+                const fecha = new Date(reservation.fecha);
+                if (!isNaN(fecha)) {
+                    fechaFormateada = fecha.toISOString().split('T')[0];
+                }
+            }
+        }
+        document.getElementById('editFecha').value = fechaFormateada;
+        
+        // Formatear hora para input type="time" (HH:MM)
+        let horaFormateada = '';
+        if (reservation.hora) {
+            // Si la hora ya tiene formato HH:MM o HH:MM:SS, usar solo HH:MM
+            if (reservation.hora.match(/^\d{2}:\d{2}(:\d{2})?$/)) {
+                horaFormateada = reservation.hora.substring(0, 5);
+            }
+        }
+        document.getElementById('editHora').value = horaFormateada;
+        
+        document.getElementById('editComensales').value = reservation.numero_comensales;
+        document.getElementById('editEstado').value = reservation.estado;
+        document.getElementById('editObservaciones').value = reservation.observaciones || '';
+        
+        // Limpiar mensajes de error
+        const errorDiv = document.getElementById('editReservationError');
+        errorDiv.style.display = 'none';
+        errorDiv.textContent = '';
+        
+        // Mostrar el modal
+        const modal = new bootstrap.Modal(document.getElementById('editReservationModal'));
+        modal.show();
+        
+    } catch (error) {
+        console.error('Error al cargar reserva:', error);
+        showToast('Error al cargar reserva', 'error');
+    }
+}
+
+// Save reservation (actualizar)
+async function saveReservation() {
+    try {
+        const token = window.authToken || localStorage.getItem('token') || sessionStorage.getItem('token');
+        
+        const reservationId = document.getElementById('editReservationId').value;
+        
+        if (!reservationId) {
+            showToast('ID de reserva no encontrado', 'error');
+            return;
+        }
+        
+        // Obtener valores del formulario
+        const fecha = document.getElementById('editFecha').value;
+        const hora = document.getElementById('editHora').value;
+        const numeroComensales = parseInt(document.getElementById('editComensales').value);
+        const estado = document.getElementById('editEstado').value;
+        const observaciones = document.getElementById('editObservaciones').value;
+        
+        // Validar campos requeridos
+        if (!fecha) {
+            const errorDiv = document.getElementById('editReservationError');
+            errorDiv.textContent = 'La fecha es requerida';
+            errorDiv.style.display = 'block';
+            return;
+        }
+        
+        if (!hora) {
+            const errorDiv = document.getElementById('editReservationError');
+            errorDiv.textContent = 'La hora es requerida';
+            errorDiv.style.display = 'block';
+            return;
+        }
+        
+        const data = {
+            fecha: fecha,
+            hora: hora,
+            numero_comensales: numeroComensales,
+            estado: estado,
+            observaciones: observaciones
+        };
+        
+        const response = await fetch(`${API_BASE}/reservas/${reservationId}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify(data)
+        });
+        
+        const result = await response.json();
+        
+        if (!response.ok) {
+            // Mostrar error en el modal
+            const errorDiv = document.getElementById('editReservationError');
+            errorDiv.textContent = result.error || 'Error al actualizar reserva';
+            errorDiv.style.display = 'block';
+            return;
+        }
+        
+        // Cerrar modal
+        const modal = bootstrap.Modal.getInstance(document.getElementById('editReservationModal'));
+        modal.hide();
+        
+        showToast('Reserva actualizada correctamente', 'success');
+        
+        // Recargar lista de reservas
+        loadAdminReservations();
+        
+    } catch (error) {
+        console.error('Error al guardar reserva:', error);
+        const errorDiv = document.getElementById('editReservationError');
+        errorDiv.textContent = 'Error de conexión al guardar';
+        errorDiv.style.display = 'block';
+    }
+}
+
+// Delete reservation
+async function deleteReservation(reservationId) {
+    try {
+        const token = window.authToken || localStorage.getItem('token') || sessionStorage.getItem('token');
+        
+        // Confirmar eliminación con SweetAlert2
+        const result = await Swal.fire({
+            title: '¿Estás seguro?',
+            text: 'Esta acción no se puede deshacer',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#d33',
+            cancelButtonColor: '#3085d6',
+            confirmButtonText: 'Sí, eliminar',
+            cancelButtonText: 'Cancelar'
+        });
+        
+        if (!result.isConfirmed) {
+            return;
+        }
+        
+        const response = await fetch(`${API_BASE}/reservas/${reservationId}`, {
+            method: 'DELETE',
+            headers: {
+                'Authorization': `Bearer ${token}`
+            }
+        });
+        
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.error || 'Error al eliminar reserva');
+        }
+        
+        showToast('Reserva eliminada correctamente', 'success');
+        
+        // Recargar lista de reservas
+        loadAdminReservations();
+        
+    } catch (error) {
+        console.error('Error al eliminar reserva:', error);
+        showToast(error.message || 'Error al eliminar reserva', 'error');
+    }
+}
+
 // Load admin reservations
 async function loadAdminReservations() {
     try {
@@ -627,6 +821,12 @@ document.addEventListener('DOMContentLoaded', function() {
         reservaFecha.setAttribute('min', today);
     }
     
+    // Set minimum date for edit reservation date as well
+    const editFecha = document.getElementById('editFecha');
+    if (editFecha) {
+        editFecha.setAttribute('min', today);
+    }
+    
     // Reservation form handler
     const reservationForm = document.getElementById('reservationForm');
     if (reservationForm) {
@@ -709,3 +909,6 @@ window.updatePreorderTotal = updatePreorderTotal;
 window.checkAvailability = checkAvailability;
 window.selectTable = selectTable;
 window.loadZones = loadZones;
+window.editReservation = editReservation;
+window.saveReservation = saveReservation;
+window.deleteReservation = deleteReservation;

@@ -1373,6 +1373,13 @@ def update_reservation(reservation_id):
     
     data = request.get_json()
     
+    # Validar campos requeridos
+    if not data.get('fecha'):
+        return jsonify({'error': 'La fecha es requerida'}), 400
+    
+    if not data.get('hora'):
+        return jsonify({'error': 'La hora es requerida'}), 400
+    
     try:
         update_query = """
             UPDATE reservas 
