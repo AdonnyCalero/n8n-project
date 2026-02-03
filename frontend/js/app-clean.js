@@ -355,22 +355,74 @@ async function checkAvailability() {
         if (data.mesas_disponibles && data.mesas_disponibles.length > 0) {
             tablesListDiv.innerHTML = '';
             
-            data.mesas_disponibles.forEach(table => {
-                const col = document.createElement('div');
-                col.className = 'col-md-4';
-                col.innerHTML = `
-                    <div class="card">
-                        <div class="card-body text-center">
-                            <h5>Mesa ${table.numero}</h5>
-                            <p>Capacidad: ${table.capacidad} personas</p>
-                            <button type="button" class="btn btn-primary" onclick="selectTable(${table.id}, '${table.numero}', ${table.capacidad}, '${table.zona_nombre || ''}')">
-                                Seleccionar
-                            </button>
-                        </div>
+            // Filtrar mesas según la capacidad exacta o cercana al número de comensales
+            // Mostrar solo mesas que puedan acomodar exactamente o con margen de 2 personas
+            const mesasFiltradas = data.mesas_disponibles.filter(table => {
+                return table.capacidad >= comensales && table.capacidad <= (comensales + 2);
+            });
+            
+            if (mesasFiltradas.length > 0) {
+                // Mostrar mensaje informativo
+                const infoDiv = document.createElement('div');
+                infoDiv.className = 'col-12 mb-3';
+                infoDiv.innerHTML = `
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle"></i> Mostrando mesas para <strong>${comensales} comensales</strong>
                     </div>
                 `;
-                tablesListDiv.appendChild(col);
-            });
+                tablesListDiv.appendChild(infoDiv);
+                
+                mesasFiltradas.forEach(table => {
+                    const col = document.createElement('div');
+                    col.className = 'col-md-4';
+                    col.innerHTML = `
+                        <div class="card">
+                            <div class="card-body text-center">
+                                <h5>Mesa ${table.numero}</h5>
+                                <p class="mb-1"><strong>Capacidad: ${table.capacidad} personas</strong></p>
+                                <span class="badge bg-${table.capacidad === comensales ? 'success' : 'info'} mb-2">
+                                    ${table.capacidad === comensales ? 'Capacidad exacta' : 'Capacidad adecuada'}
+                                </span>
+                                <button type="button" class="btn btn-primary w-100" onclick="selectTable(${table.id}, '${table.numero}', ${table.capacidad}, '${table.zona_nombre || ''}')">
+                                    <i class="bi bi-check-circle"></i> Seleccionar
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                    tablesListDiv.appendChild(col);
+                });
+            } else {
+                // No hay mesas con capacidad exacta o cercana
+                const noMatchDiv = document.createElement('div');
+                noMatchDiv.className = 'col-12';
+                noMatchDiv.innerHTML = `
+                    <div class="alert alert-warning">
+                        <i class="bi bi-exclamation-triangle"></i> 
+                        <strong>No hay mesas disponibles para exactamente ${comensales} comensales.</strong><br>
+                        Mesas disponibles con otras capacidades:
+                    </div>
+                `;
+                tablesListDiv.appendChild(noMatchDiv);
+                
+                // Mostrar todas las mesas disponibles como alternativa
+                data.mesas_disponibles.forEach(table => {
+                    const col = document.createElement('div');
+                    col.className = 'col-md-4';
+                    col.innerHTML = `
+                        <div class="card border-warning">
+                            <div class="card-body text-center">
+                                <h5>Mesa ${table.numero}</h5>
+                                <p class="mb-1"><strong>Capacidad: ${table.capacidad} personas</strong></p>
+                                <span class="badge bg-warning mb-2">${table.capacidad > comensales ? 'Espacio extra' : 'Capacidad justa'}</span>
+                                <button type="button" class="btn btn-outline-primary w-100" onclick="selectTable(${table.id}, '${table.numero}', ${table.capacidad}, '${table.zona_nombre || ''}')">
+                                    <i class="bi bi-check-circle"></i> Seleccionar
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                    tablesListDiv.appendChild(col);
+                });
+            }
             
             availableTablesDiv.style.display = 'block';
         } else {
