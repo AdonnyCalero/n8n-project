@@ -24,6 +24,21 @@
     box-shadow: 0 10px 30px rgba(0,0,0,0.15);
 }
 
+.zone-home-card {
+    transition: all 0.3s ease;
+    border: 2px solid #e9ecef;
+}
+
+.zone-home-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.12);
+    border-color: var(--bs-primary);
+}
+
+.zone-icon {
+    color: var(--bs-primary);
+}
+
 .bg-gradient-primary {
     background: linear-gradient(135deg, var(--bs-primary), #6610f2) !important;
 }

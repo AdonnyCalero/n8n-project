@@ -7,6 +7,10 @@ const API_BASE = window.location.origin + '/api';
 let selectedTableForReservation = null;
 let menuItemsForPreorder = [];
 
+// Variables globales para reserva de zonas
+let selectedZonesForReservation = [];
+let availableZonesData = [];
+
 // Show toast notification
 function showToast(message, type = 'info') {
     let toastContainer = document.getElementById('toastContainer');
@@ -93,6 +97,153 @@ async function loadMenuItemsForPreorder() {
     } catch (error) {
         console.error('Error al cargar menú para pre-pedido:', error);
         showToast('Error al cargar menú', 'error');
+    }
+}
+
+// Load zones for home page
+async function loadHomeZones() {
+    const container = document.getElementById('homeZonesList');
+    if (!container) return;
+    
+    try {
+        const response = await fetch(`${API_BASE}/zonas`);
+        if (!response.ok) throw new Error('Error al cargar zonas');
+        
+        const zonas = await response.json();
+        
+        if (!zonas || zonas.length === 0) {
+            container.innerHTML = `
+                <div class="col-12 text-center">
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle"></i> No hay zonas disponibles.
+                    </div>
+                </div>
+            `;
+            return;
+        }
+        
+        container.innerHTML = '';
+        
+        zonas.forEach(zona => {
+            const card = document.createElement('div');
+            card.className = 'col-md-4';
+            card.innerHTML = `
+                <div class="card h-100 zone-home-card">
+                    <div class="card-body text-center">
+                        <div class="zone-icon mb-3">
+                            <i class="bi bi-building display-4"></i>
+                        </div>
+                        <h5 class="card-title">${zona.nombre}</h5>
+                        <p class="card-text text-muted">
+                            ${zona.descripcion || 'Sin descripción disponible'}
+                        </p>
+                        <hr>
+                        <div class="d-flex justify-content-between text-center">
+                            <div>
+                                <strong class="d-block">${zona.total_mesas || 0}</strong>
+                                <small class="text-muted">Mesas</small>
+                            </div>
+                            <div>
+                                <strong class="d-block">${zona.total_capacidad || 0}</strong>
+                                <small class="text-muted">Capacidad</small>
+                            </div>
+                        </div>
+                        <button class="btn btn-outline-primary w-100 mt-3" onclick="if (typeof showSection === 'function') showSection('reservas')">
+                            <i class="bi bi-calendar-plus"></i> Reservar Aquí
+                        </button>
+                    </div>
+                </div>
+            `;
+            container.appendChild(card);
+        });
+    } catch (error) {
+        console.error('Error al cargar zonas:', error);
+        container.innerHTML = `
+            <div class="col-12 text-center">
+                <div class="alert alert-danger">
+                    <i class="bi bi-exclamation-circle"></i> Error al cargar las zonas.
+                </div>
+            </div>
+        `;
+    }
+}
+
+// Load menu items for the menu section (client view)
+async function loadMenuItems() {
+    try {
+        const response = await fetch(`${API_BASE}/menu`);
+        const menuItems = await response.json();
+        
+        const container = document.getElementById('menuItems');
+        container.innerHTML = '';
+        
+        if (menuItems.length === 0) {
+            container.innerHTML = `
+                <div class="col-12 text-center">
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle"></i> No hay platos disponibles en este momento.
+                    </div>
+                </div>
+            `;
+            return;
+        }
+        
+        // Group items by category
+        const groupedByCategory = menuItems.reduce((acc, item) => {
+            const categoria = item.categoria || 'Sin categoría';
+            if (!acc[categoria]) {
+                acc[categoria] = [];
+            }
+            acc[categoria].push(item);
+            return acc;
+        }, {});
+        
+        // Display items grouped by category
+        for (const [categoria, items] of Object.entries(groupedByCategory)) {
+            const categoryDiv = document.createElement('div');
+            categoryDiv.className = 'col-12 mb-4';
+            categoryDiv.innerHTML = `
+                <h4 class="mb-3 border-bottom pb-2">
+                    <i class="bi bi-collection"></i> ${categoria}
+                </h4>
+            `;
+            container.appendChild(categoryDiv);
+            
+            items.forEach(item => {
+                const card = document.createElement('div');
+                card.className = 'col-md-6 col-lg-4';
+                card.innerHTML = `
+                    <div class="card h-100 menu-card">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <h5 class="card-title mb-0">${item.nombre}</h5>
+                                <span class="badge bg-success">$${parseFloat(item.precio || 0).toFixed(2)}</span>
+                            </div>
+                            <p class="card-text">
+                                <small class="text-muted">${item.descripcion || 'Sin descripción'}</small>
+                            </p>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span class="badge ${item.stock_disponible > 10 ? 'bg-success' : item.stock_disponible > 0 ? 'bg-warning' : 'bg-danger'}">
+                                    <i class="bi bi-box"></i> Stock: ${item.stock_disponible}
+                                </span>
+                                ${item.disponible ? '<span class="badge bg-info">Disponible</span>' : '<span class="badge bg-secondary">No disponible</span>'}
+                            </div>
+                        </div>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+    } catch (error) {
+        console.error('Error al cargar menú:', error);
+        const container = document.getElementById('menuItems');
+        container.innerHTML = `
+            <div class="col-12 text-center">
+                <div class="alert alert-danger">
+                    <i class="bi bi-exclamation-circle"></i> Error al cargar el menú. Por favor, intenta nuevamente.
+                </div>
+            </div>
+        `;
     }
 }
 
@@ -208,6 +359,10 @@ function showSection(sectionId) {
     // Load section-specific data
     if (sectionId === 'mis-reservas' && authToken) {
         loadMyReservations();
+    } else if (sectionId === 'inicio') {
+        loadHomeZones();
+    } else if (sectionId === 'menu') {
+        loadMenuItems();
     } else if (sectionId === 'admin' && authToken) {
         // Solo configurar tabs y cargar dashboard cuando se entra al panel admin
         setupAdminTabs();
@@ -223,7 +378,11 @@ function validateReservationForm() {
     const comensales = document.getElementById('reservaComensales').value;
     const errors = [];
     
-    // Validar campos vacíos
+    // Verificar modo de reserva (Mesa o Zona)
+    const modeZone = document.getElementById('modeZone');
+    const isZoneMode = modeZone && modeZone.checked;
+    
+    // Validar campos vacíos básicos
     if (!fecha) {
         errors.push('❌ La fecha es obligatoria');
     }
@@ -232,9 +391,21 @@ function validateReservationForm() {
         errors.push('❌ La hora es obligatoria');
     }
     
-    if (!comensales) {
-        errors.push('❌ El número de comensales es obligatorio');
+    // Validar número de comensales SOLO si está en modo mesa
+    if (!isZoneMode) {
+        // Modo mesa: validar comensales normalmente
+        if (!comensales || comensales === '' || comensales === null || comensales === undefined) {
+            errors.push('❌ El número de comensales es obligatorio');
+        } else {
+            const numComensales = parseInt(comensales);
+            if (isNaN(numComensales) || numComensales < 1) {
+                errors.push('❌ Debe haber al menos 1 comensal');
+            } else if (numComensales > 20) {
+                errors.push('❌ Para grupos mayores a 20 personas, contacte directamente al restaurante');
+            }
+        }
     }
+    // En modo zona: no se valida el campo de comensales (se usa la capacidad de las zonas seleccionadas)
     
     // Validar fecha no sea en el pasado
     if (fecha) {
@@ -267,18 +438,6 @@ function validateReservationForm() {
         
         if (diffInHours < 1) {
             errors.push('❌ La reserva debe hacerse con al menos 1 hora de anticipación');
-        }
-    }
-    
-    // Validar número de comensales
-    if (comensales === '' || comensales === null || comensales === undefined) {
-        errors.push('❌ El número de comensales es obligatorio');
-    } else {
-        const numComensales = parseInt(comensales);
-        if (isNaN(numComensales) || numComensales < 1) {
-            errors.push('❌ Debe haber al menos 1 comensal');
-        } else if (numComensales > 20) {
-            errors.push('❌ Para grupos mayores a 20 personas, contacte directamente al restaurante');
         }
     }
     
@@ -336,7 +495,22 @@ async function checkAvailability() {
         
         const fecha = document.getElementById('reservaFecha').value;
         const hora = document.getElementById('reservaHora').value;
+        
+        // Verificar modo de reserva (Mesa o Zona)
+        const modeZone = document.getElementById('modeZone');
+        const isZoneMode = modeZone && modeZone.checked;
+        
+        if (isZoneMode) {
+            // Modo Zona - Verificar disponibilidad de zonas
+            // No necesitamos comensales en modo zona, pasamos 1 como valor por defecto
+            await checkZoneAvailability(fecha, hora, 1);
+            return;
+        }
+        
+        // Modo Mesa - Obtener comensales del campo
         const comensales = parseInt(document.getElementById('reservaComensales').value);
+        
+        // Modo Mesa - Verificar disponibilidad de mesas individuales
         const id_zona = document.getElementById('reservaZona').value || null;
         
         const params = new URLSearchParams({
@@ -358,7 +532,7 @@ async function checkAvailability() {
             // Filtrar mesas según la capacidad exacta o cercana al número de comensales
             // Mostrar solo mesas que puedan acomodar exactamente o con margen de 2 personas
             const mesasFiltradas = data.mesas_disponibles.filter(table => {
-                return table.capacidad >= comensales && table.capacidad <= (comensales + 2);
+                return table.capacidad >= comensales;
             });
             
             if (mesasFiltradas.length > 0) {
@@ -446,6 +620,317 @@ function selectTable(id, numero, capacidad, zonaNombre) {
     selectedTableDiv.style.display = 'block';
     
     showToast(`Mesa ${numero} seleccionada`, 'success');
+}
+
+// Toggle reservation mode (Mesa or Zona)
+function toggleReservationMode() {
+    const modeTable = document.getElementById('modeTable');
+    const modeZone = document.getElementById('modeZone');
+    const availableTables = document.getElementById('availableTables');
+    const availableZones = document.getElementById('availableZones');
+    const selectedTable = document.getElementById('selectedTable');
+    const selectedZones = document.getElementById('selectedZones');
+    const comensalesContainer = document.getElementById('comensalesContainer');
+    const zonaPreferidaContainer = document.getElementById('zonaPreferidaContainer');
+    
+    if (modeZone && modeZone.checked) {
+        // Modo Zona
+        if (availableTables) availableTables.style.display = 'none';
+        if (availableZones) availableZones.style.display = 'none';
+        if (selectedTable) selectedTable.style.display = 'none';
+        if (selectedZones) selectedZones.style.display = 'none';
+        
+        // Ocultar campo de comensales y zona preferida en modo zona
+        if (comensalesContainer) comensalesContainer.style.display = 'none';
+        if (zonaPreferidaContainer) zonaPreferidaContainer.style.display = 'none';
+        
+        // Limpiar selecciones previas
+        selectedTableForReservation = null;
+        selectedZonesForReservation = [];
+        
+        // Limpiar valor de comensales
+        const comensalesInput = document.getElementById('reservaComensales');
+        if (comensalesInput) {
+            comensalesInput.value = '';
+            comensalesInput.removeAttribute('required');
+        }
+        
+        showToast('Modo: Reserva de Zona(s) - Puedes seleccionar una o varias zonas completas', 'info');
+    } else {
+        // Modo Mesa
+        if (availableZones) availableZones.style.display = 'none';
+        if (selectedZones) selectedZones.style.display = 'none';
+        
+        // Mostrar campo de comensales y zona preferida en modo mesa
+        if (comensalesContainer) comensalesContainer.style.display = 'block';
+        if (zonaPreferidaContainer) zonaPreferidaContainer.style.display = 'block';
+        
+        // Limpiar selecciones previas de zonas
+        selectedZonesForReservation = [];
+        
+        // Restaurar el campo de comensales como requerido
+        const comensalesInput = document.getElementById('reservaComensales');
+        if (comensalesInput) {
+            comensalesInput.setAttribute('required', 'required');
+            if (!comensalesInput.value) comensalesInput.value = '2';
+        }
+    }
+}
+
+// Check zone availability
+async function checkZoneAvailability(fecha, hora, comensales) {
+    try {
+        const params = new URLSearchParams({
+            fecha,
+            hora,
+            comensales
+        });
+        
+        // Obtener zonas y sus mesas disponibles (SECUENCIAL para evitar "Commands out of sync")
+        let zonasResponse, mesasResponse;
+        try {
+            zonasResponse = await fetch(`${API_BASE}/zonas`);
+            mesasResponse = await fetch(`${API_BASE}/disponibilidad?${params}`);
+        } catch (networkError) {
+            console.warn('Error de red al obtener datos de zonas:', networkError);
+        }
+        
+        let zonas = [];
+        let mesasData = { mesas_disponibles: [] };
+        
+        // Validar respuesta de zonas
+        if (zonasResponse && zonasResponse.ok) {
+            try {
+                const zonasJson = await zonasResponse.json();
+                if (Array.isArray(zonasJson) && zonasJson.length > 0) {
+                    zonas = zonasJson;
+                } else {
+                    console.warn('La respuesta de /api/zonas no es un array válido:', zonasJson);
+                }
+            } catch (parseError) {
+                console.warn('Error al parsear respuesta de zonas:', parseError);
+            }
+        }
+        
+        // Validar respuesta de mesas
+        if (mesasResponse && mesasResponse.ok) {
+            try {
+                const mesasJson = await mesasResponse.json();
+                if (mesasJson && typeof mesasJson === 'object') {
+                    mesasData = mesasJson;
+                    if (!Array.isArray(mesasData.mesas_disponibles)) {
+                        console.warn('mesas_disponibles no es un array:', mesasData.mesas_disponibles);
+                        mesasData.mesas_disponibles = [];
+                    }
+                } else {
+                    console.warn('La respuesta de disponibilidad no es un objeto válido:', mesasJson);
+                }
+            } catch (parseError) {
+                console.warn('Error al parsear respuesta de mesas:', parseError);
+            }
+        }
+        
+        // Verificar si hubo errores en la API
+        const apiError = !zonasResponse || !zonasResponse.ok || !mesasResponse || !mesasResponse.ok;
+        
+        if (apiError) {
+            const zonesListDiv = document.getElementById('zonesList');
+            const availableZonesDiv = document.getElementById('availableZones');
+            
+            if (zonesListDiv && availableZonesDiv) {
+                zonesListDiv.innerHTML = `
+                    <div class="col-12">
+                        <div class="alert alert-danger">
+                            <i class="bi bi-exclamation-circle"></i> 
+                            <strong>Error de conexión:</strong> No se pudieron obtener las zonas del servidor.
+                            <br>Por favor, verifica tu conexión a internet o intenta nuevamente más tarde.
+                        </div>
+                    </div>
+                `;
+                availableZonesDiv.style.display = 'block';
+            }
+            
+            showToast('Error al obtener zonas del servidor. Intenta nuevamente más tarde.', 'error');
+            return;
+        }
+        
+        const mesasDisponibles = mesasData.mesas_disponibles || [];
+        
+        // Calcular capacidad y disponibilidad por zona (sin filtrar por capacidad)
+        const zonesWithInfo = zonas.map(zona => {
+            const mesasEnZona = mesasDisponibles.filter(mesa => mesa.id_zona === zona.id || mesa.zona_nombre === zona.nombre);
+            const capacidadTotal = mesasEnZona.reduce((sum, mesa) => sum + mesa.capacidad, 0);
+            const mesasCount = mesasEnZona.length;
+            
+            return {
+                ...zona,
+                mesas_disponibles: mesasEnZona,
+                capacidad_total: capacidadTotal,
+                mesas_count: mesasCount,
+                disponible: mesasCount > 0
+            };
+        });
+        
+        availableZonesData = zonesWithInfo;
+        
+        const zonesListDiv = document.getElementById('zonesList');
+        const availableZonesDiv = document.getElementById('availableZones');
+        
+        if (!zonesListDiv || !availableZonesDiv) {
+            console.error('No se encontraron los elementos del DOM para mostrar zonas');
+            return;
+        }
+        
+        zonesListDiv.innerHTML = '';
+        
+        const zonasDisponibles = zonesWithInfo.filter(z => z.disponible);  // Mostrar todas las zonas con mesas disponibles
+        
+        if (zonasDisponibles.length > 0) {
+            zonasDisponibles.forEach(zona => {
+                const col = document.createElement('div');
+                col.className = 'col-md-6';
+                col.innerHTML = `
+                    <div class="card zone-card" id="zoneCard_${zona.id}">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <h5 class="card-title mb-0">${zona.nombre}</h5>
+                                <span class="badge bg-success">Disponible</span>
+                            </div>
+                            <p class="card-text">
+                                <small class="text-muted">${zona.descripcion || 'Zona del restaurante'}</small>
+                            </p>
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <span class="badge bg-info">
+                                    <i class="bi bi-grid"></i> ${zona.mesas_count} mesas
+                                </span>
+                                <span class="badge bg-primary">
+                                    <i class="bi bi-people"></i> Capacidad: ${zona.capacidad_total} personas
+                                </span>
+                            </div>
+                            <button type="button" class="btn btn-success w-100" id="btnSelectZone_${zona.id}" onclick="selectZone(${zona.id})">
+                                <i class="bi bi-check-square"></i> Seleccionar Zona
+                            </button>
+                            <button type="button" class="btn btn-danger w-100 mt-2" id="btnDeselectZone_${zona.id}" onclick="deselectZone(${zona.id})" style="display: none;">
+                                <i class="bi bi-x-square"></i> Quitar Selección
+                            </button>
+                        </div>
+                    </div>
+                `;
+                zonesListDiv.appendChild(col);
+            });
+            
+            availableZonesDiv.style.display = 'block';
+        } else {
+            zonesListDiv.innerHTML = `
+                <div class="col-12">
+                    <div class="alert alert-warning">
+                        <i class="bi bi-exclamation-triangle"></i> 
+                        <strong>No hay zonas disponibles</strong> para ${comensales} comensales en la fecha y hora seleccionadas.
+                    </div>
+                </div>
+            `;
+            availableZonesDiv.style.display = 'block';
+        }
+    } catch (error) {
+        console.error('Error al verificar disponibilidad de zonas:', error);
+        showToast('Error al verificar disponibilidad de zonas. Intenta nuevamente más tarde.', 'error');
+        
+        // Mostrar mensaje amigable en el UI
+        const zonesListDiv = document.getElementById('zonesList');
+        const availableZonesDiv = document.getElementById('availableZones');
+        if (zonesListDiv && availableZonesDiv) {
+            zonesListDiv.innerHTML = `
+                <div class="col-12">
+                    <div class="alert alert-danger">
+                        <i class="bi bi-exclamation-circle"></i> 
+                        <strong>Error al cargar zonas:</strong> ${error.message || 'Error desconocido'}. 
+                        <br>Por favor, <a href="javascript:void(0)" onclick="checkZoneAvailability(document.getElementById('reservaFecha').value, document.getElementById('reservaHora').value, 1)">intenta nuevamente</a>.
+                    </div>
+                </div>
+            `;
+            availableZonesDiv.style.display = 'block';
+        }
+    }
+}
+
+// Select a zone for reservation
+function selectZone(zoneId) {
+    const zona = availableZonesData.find(z => z.id === zoneId);
+    if (!zona) return;
+    
+    // Verificar si ya está seleccionada
+    const alreadySelected = selectedZonesForReservation.find(z => z.id === zoneId);
+    if (alreadySelected) {
+        showToast('Esta zona ya está seleccionada', 'warning');
+        return;
+    }
+    
+    // Agregar a la selección
+    selectedZonesForReservation.push(zona);
+    
+    // Actualizar UI de la tarjeta
+    const zoneCard = document.getElementById(`zoneCard_${zoneId}`);
+    const btnSelect = document.getElementById(`btnSelectZone_${zoneId}`);
+    const btnDeselect = document.getElementById(`btnDeselectZone_${zoneId}`);
+    
+    if (zoneCard) zoneCard.classList.add('border-success', 'bg-light');
+    if (btnSelect) btnSelect.style.display = 'none';
+    if (btnDeselect) btnDeselect.style.display = 'block';
+    
+    // Actualizar UI de zonas seleccionadas
+    updateSelectedZonesUI();
+    
+    showToast(`Zona "${zona.nombre}" seleccionada`, 'success');
+}
+
+// Deselect a zone
+function deselectZone(zoneId) {
+    // Remover de la selección
+    selectedZonesForReservation = selectedZonesForReservation.filter(z => z.id !== zoneId);
+    
+    // Actualizar UI de la tarjeta
+    const zoneCard = document.getElementById(`zoneCard_${zoneId}`);
+    const btnSelect = document.getElementById(`btnSelectZone_${zoneId}`);
+    const btnDeselect = document.getElementById(`btnDeselectZone_${zoneId}`);
+    
+    if (zoneCard) zoneCard.classList.remove('border-success', 'bg-light');
+    if (btnSelect) btnSelect.style.display = 'block';
+    if (btnDeselect) btnDeselect.style.display = 'none';
+    
+    // Actualizar UI de zonas seleccionadas
+    updateSelectedZonesUI();
+}
+
+// Update selected zones UI
+function updateSelectedZonesUI() {
+    const selectedZonesDiv = document.getElementById('selectedZones');
+    const selectedZonesList = document.getElementById('selectedZonesList');
+    const selectedZonesCapacity = document.getElementById('selectedZonesCapacity');
+    
+    if (!selectedZonesDiv || !selectedZonesList || !selectedZonesCapacity) return;
+    
+    if (selectedZonesForReservation.length === 0) {
+        selectedZonesDiv.style.display = 'none';
+        return;
+    }
+    
+    // Calcular capacidad total
+    const totalCapacity = selectedZonesForReservation.reduce((sum, z) => sum + z.capacidad_total, 0);
+    
+    // Generar lista de zonas seleccionadas
+    let html = '';
+    selectedZonesForReservation.forEach(zona => {
+        html += `
+            <div class="mb-1">
+                <span class="badge bg-success me-2">${zona.nombre}</span>
+                <small class="text-muted">(${zona.capacidad_total} personas - ${zona.mesas_count} mesas)</small>
+            </div>
+        `;
+    });
+    
+    selectedZonesList.innerHTML = html;
+    selectedZonesCapacity.textContent = `${totalCapacity} personas`;
+    selectedZonesDiv.style.display = 'block';
 }
 
 // Load user's reservations
@@ -939,7 +1424,7 @@ function logout() {
     // Reset navigation to initial state
     document.getElementById('navInicio').style.display = 'block';
     document.getElementById('navReservar').style.display = 'none';
-    document.getElementById('navMenu').style.display = 'none';
+    document.getElementById('navMenu').style.display = 'block';
     document.getElementById('navMisReservas').style.display = 'none';
     document.getElementById('navLogin').style.display = 'block';
     document.getElementById('navUser').style.display = 'none';
@@ -981,6 +1466,9 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Load zones
     loadZones();
+    
+    // Load zones for home page
+    loadHomeZones();
     
     // Login form
     const loginForm = document.getElementById('loginForm');
@@ -1051,62 +1539,184 @@ document.addEventListener('DOMContentLoaded', function() {
                 return;
             }
             
-            // Validar que se haya seleccionado una mesa
-            if (!selectedTableForReservation) {
-                showToast('Por favor selecciona una mesa antes de confirmar la reserva', 'error');
-                // Desplazarse a la sección de mesas disponibles
-                const availableTablesDiv = document.getElementById('availableTables');
-                if (availableTablesDiv) {
-                    availableTablesDiv.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                }
-                return;
-            }
-            
-            const data = {
-                id_mesa: selectedTableForReservation.id,
-                fecha: document.getElementById('reservaFecha').value,
-                hora: document.getElementById('reservaHora').value,
-                numero_comensales: parseInt(document.getElementById('reservaComensales').value),
-                observaciones: document.getElementById('reservaObservaciones').value
-            };
-            
-            // Agregar pre-pedidos si están habilitados
+            // Verificar modo de reserva
+            const modeZone = document.getElementById('modeZone');
+            const isZoneMode = modeZone && modeZone.checked;
             const enablePreorders = document.getElementById('enablePreorders');
-            if (enablePreorders && enablePreorders.checked) {
-                data.preorders = getSelectedPreorders();
-            }
+            const hasPreorders = enablePreorders && enablePreorders.checked;
+            const preorders = hasPreorders ? getSelectedPreorders() : [];
+            
+            const fecha = document.getElementById('reservaFecha').value;
+            const hora = document.getElementById('reservaHora').value;
+            const observaciones = document.getElementById('reservaObservaciones').value;
             
             try {
-                const response = await fetch(`${API_BASE}/reservas`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${authToken}`
-                    },
-                    body: JSON.stringify(data)
-                });
+                let successCount = 0;
+                let failedTables = [];
                 
-                if (response.ok) {
-                    const result = await response.json();
-                    showToast('Reserva creada exitosamente', 'success');
+                if (isZoneMode) {
+                    // Modo Zona - Validar que se haya seleccionado al menos una zona
+                    if (!selectedZonesForReservation || selectedZonesForReservation.length === 0) {
+                        showToast('Por favor selecciona al menos una zona antes de confirmar la reserva', 'error');
+                        const availableZonesDiv = document.getElementById('availableZones');
+                        if (availableZonesDiv) {
+                            availableZonesDiv.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        }
+                        return;
+                    }
                     
+                    // Obtener todas las mesas disponibles de las zonas seleccionadas
+                    let tablesToReserve = [];
+                    const selectedZoneIds = selectedZonesForReservation.map(z => z.id);
+                    
+                    // Buscar en availableZonesData las zonas seleccionadas y extraer sus mesas
+                    if (availableZonesData && availableZonesData.length > 0) {
+                        availableZonesData.forEach(zoneData => {
+                            if (selectedZoneIds.includes(zoneData.id) && zoneData.mesas_disponibles) {
+                                tablesToReserve = tablesToReserve.concat(zoneData.mesas_disponibles);
+                            }
+                        });
+                    }
+                    
+                    if (tablesToReserve.length === 0) {
+                        showToast('No hay mesas disponibles en las zonas seleccionadas', 'error');
+                        return;
+                    }
+                    
+                    // Crear una reserva por cada mesa
+                    for (let i = 0; i < tablesToReserve.length; i++) {
+                        const table = tablesToReserve[i];
+                        const data = {
+                            id_mesa: table.id,
+                            fecha: fecha,
+                            hora: hora,
+                            numero_comensales: table.capacidad || 1,
+                            observaciones: observaciones
+                        };
+                        
+                        // Solo la primera mesa incluye pre-pedidos
+                        if (i === 0 && hasPreorders && preorders.length > 0) {
+                            data.preorders = preorders;
+                        }
+                        
+                        try {
+                            const response = await fetch(`${API_BASE}/reservas`, {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'Authorization': `Bearer ${authToken}`
+                                },
+                                body: JSON.stringify(data)
+                            });
+                            
+                            if (response.ok) {
+                                successCount++;
+                            } else {
+                                const error = await response.json();
+                                failedTables.push({
+                                    table: `Mesa ${table.numero || table.id}`,
+                                    error: error.error || 'Error desconocido'
+                                });
+                            }
+                        } catch (error) {
+                            failedTables.push({
+                                table: `Mesa ${table.numero || table.id}`,
+                                error: 'Error de conexión'
+                            });
+                        }
+                    }
+                    
+                    // Mostrar mensaje de resultado
+                    if (successCount === tablesToReserve.length) {
+                        showToast(`Éxito: Se crearon ${successCount} reservas`, 'success');
+                    } else if (successCount > 0) {
+                        showToast(`Parcial: ${successCount} de ${tablesToReserve.length} reservas creadas`, 'warning');
+                        if (failedTables.length > 0) {
+                            console.error('Mesas que fallaron:', failedTables);
+                            showToast(`${failedTables.length} mesa(s) no pudieron reservarse. Ver consola.`, 'error');
+                        }
+                    } else {
+                        showToast('Error: No se pudo crear ninguna reserva', 'error');
+                        return; // No limpiar formulario si todo falló
+                    }
+                    
+                } else {
+                    // Modo Mesa - Validar que se haya seleccionado una mesa
+                    if (!selectedTableForReservation) {
+                        showToast('Por favor selecciona una mesa antes de confirmar la reserva', 'error');
+                        const availableTablesDiv = document.getElementById('availableTables');
+                        if (availableTablesDiv) {
+                            availableTablesDiv.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        }
+                        return;
+                    }
+                    
+                    // Preparar datos para reserva de mesa individual
+                    const data = {
+                        id_mesa: selectedTableForReservation.id,
+                        fecha: fecha,
+                        hora: hora,
+                        numero_comensales: parseInt(document.getElementById('reservaComensales').value),
+                        observaciones: observaciones
+                    };
+                    
+                    if (hasPreorders && preorders.length > 0) {
+                        data.preorders = preorders;
+                    }
+                    
+                    const response = await fetch(`${API_BASE}/reservas`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${authToken}`
+                        },
+                        body: JSON.stringify(data)
+                    });
+                    
+                    if (response.ok) {
+                        successCount = 1;
+                        showToast('Reserva creada exitosamente', 'success');
+                    } else {
+                        const error = await response.json();
+                        showToast(error.error || 'Error al crear reserva', 'error');
+                        return;
+                    }
+                }
+                
+                // Solo llegamos aquí si al menos una reserva tuvo éxito
+                if (successCount > 0) {
                     // Limpiar formulario
                     reservationForm.reset();
-                    selectedTableForReservation = null;
-                    document.getElementById('selectedTable').style.display = 'none';
-                    document.getElementById('availableTables').style.display = 'none';
+                    
+                    // Limpiar selecciones según el modo
+                    if (isZoneMode) {
+                        selectedZonesForReservation = [];
+                        document.getElementById('selectedZones').style.display = 'none';
+                        document.getElementById('availableZones').style.display = 'none';
+                        
+                        const zoneCards = document.querySelectorAll('.zone-card');
+                        zoneCards.forEach(card => {
+                            card.classList.remove('border-success', 'bg-light');
+                        });
+                        const selectButtons = document.querySelectorAll('[id^="btnSelectZone_"]');
+                        selectButtons.forEach(btn => btn.style.display = 'block');
+                        const deselectButtons = document.querySelectorAll('[id^="btnDeselectZone_"]');
+                        deselectButtons.forEach(btn => btn.style.display = 'none');
+                    } else {
+                        selectedTableForReservation = null;
+                        document.getElementById('selectedTable').style.display = 'none';
+                        document.getElementById('availableTables').style.display = 'none';
+                    }
                     
                     // Limpiar pre-pedidos
                     if (enablePreorders) {
                         enablePreorders.checked = false;
                         document.getElementById('preordersSection').style.display = 'none';
+                        document.getElementById('preorderSummaryContainer').style.display = 'none';
                     }
                     
                     // Ir a mis reservas
                     showSection('mis-reservas');
-                } else {
-                    const error = await response.json();
-                    showToast(error.error || 'Error al crear reserva', 'error');
                 }
             } catch (error) {
                 console.error('Error al crear reserva:', error);
@@ -1132,3 +1742,6 @@ window.saveReservation = saveReservation;
 window.deleteReservation = deleteReservation;
 window.validateReservationForm = validateReservationForm;
 window.displayValidationErrors = displayValidationErrors;
+window.toggleReservationMode = toggleReservationMode;
+window.selectZone = selectZone;
+window.deselectZone = deselectZone;

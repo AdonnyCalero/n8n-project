@@ -40,6 +40,12 @@ class Database:
                 print(f"Segundo intento de conexión fallido: {e2}")
                 return False
     
+    def ensure_connection(self):
+        """Asegura que la conexión esté activa antes de cada consulta"""
+        if not self.connection or not self.connection.is_connected():
+            return self.connect()
+        return True
+    
     def disconnect(self):
         if self.connection and self.connection.is_connected():
             try:
@@ -106,6 +112,7 @@ class Database:
                 print(f"Error al cerrar conexión: {e}")
     
     def execute_query(self, query, params=None, fetch_one=False, fetch_all=True):
+        cursor = None
         try:
             if not self.connection or not self.connection.is_connected():
                 self.connect()
@@ -120,8 +127,6 @@ class Database:
             else:
                 result = True
             
-            cursor.close()
-            
             # Handle datetime/timedelta serialization
             if result and isinstance(result, list):
                 for row in result:
@@ -132,31 +137,57 @@ class Database:
             return result
         except Error as e:
             print(f"Error en consulta: {e}")
-            if self.connection:
-                # Intentar reconectar si la conexión se perdió
-                if not self.connection.is_connected():
-                    self.connect()
+            error_msg = str(e).lower()
+            # Si hay error de sync, resetear la conexión
+            if 'commands out of sync' in error_msg or 'not enough parameters' in error_msg:
+                print("Reseteando conexión MySQL debido a error de sincronización...")
+                if self.connection:
+                    try:
+                        self.connection.cmd_reset_connection()
+                    except:
+                        self.connect()
             return None
+        finally:
+            # SIEMPRE cerrar el cursor, incluso si hay error
+            if cursor:
+                try:
+                    cursor.close()
+                except:
+                    pass
     
     def execute_insert(self, query, params):
+        cursor = None
         try:
             if not self.connection or not self.connection.is_connected():
                 self.connect()
             
             cursor = self.connection.cursor()
             cursor.execute(query, params)
-            self.connection.commit()  # Asegurarse de que la transacción se complete
+            self.connection.commit()
             last_id = cursor.lastrowid
-            cursor.close()
             return last_id
         except Error as e:
             print(f"Error en inserción: {e}")
             if self.connection:
-                self.connection.rollback()  # Revertir en caso de error
-                # Intentar reconectar si la conexión se perdió
-                if not self.connection.is_connected():
-                    self.connect()
+                try:
+                    self.connection.rollback()
+                except:
+                    pass
+                # Si hay error de sincronización, resetear conexión
+                if 'commands out of sync' in str(e).lower() or 'not enough parameters' in str(e).lower():
+                    print("Reseteando conexión MySQL debido a error de sincronización...")
+                    try:
+                        self.connection.cmd_reset_connection()
+                    except:
+                        self.connect()
             return None
+        finally:
+            # SIEMPRE cerrar el cursor
+            if cursor:
+                try:
+                    cursor.close()
+                except:
+                    pass
     
     def _serialize_datetime_fields(self, obj):
         """Convert datetime and timedelta objects to strings for JSON serialization"""
@@ -212,18 +243,43 @@ class ReservationManager:
         self.db = db
     
     def check_availability(self, fecha, hora, comensales, id_zona=None):
-        query = """
-            SELECT m.* FROM mesas m
-            LEFT JOIN reservas r ON m.id = r.id_mesa 
-                AND r.fecha = %s 
-                AND ABS(TIME_TO_SEC(r.hora) - TIME_TO_SEC(%s)) < 7200
-                AND r.estado = 'confirmada'
-            WHERE m.capacidad >= %s 
-            AND (r.id IS NULL)
-            AND (%s IS NULL OR m.id_zona = %s)
-            AND m.estado != 'mantenimiento'
-        """
-        return self.db.execute_query(query, (fecha, hora, comensales, id_zona, id_zona))
+        self.db.ensure_connection()
+        
+        print(f"DEBUG - fecha: {fecha}, hora: {hora}, comensales: {comensales}, id_zona: {id_zona}")
+        
+        if id_zona:
+            query = """
+                SELECT m.*, z.nombre as zona_nombre 
+                FROM mesas m
+                LEFT JOIN zonas z ON m.id_zona = z.id
+                WHERE m.capacidad >= %s 
+                AND m.estado = 'disponible'
+                AND m.id NOT IN (
+                    SELECT id_mesa FROM reservas 
+                    WHERE fecha = %s 
+                    AND estado = 'confirmada'
+                    AND ABS(TIME_TO_SEC(hora) - TIME_TO_SEC(STR_TO_DATE(%s, '%H:%i'))) < 7200
+                )
+                AND m.id_zona = %s
+            """
+            params = (comensales, fecha, hora, id_zona)
+        else:
+            query = """
+                SELECT m.*, z.nombre as zona_nombre 
+                FROM mesas m
+                LEFT JOIN zonas z ON m.id_zona = z.id
+                WHERE m.capacidad >= %s 
+                AND m.estado = 'disponible'
+                AND m.id NOT IN (
+                    SELECT id_mesa FROM reservas 
+                    WHERE fecha = %s 
+                    AND estado = 'confirmada'
+                    AND ABS(TIME_TO_SEC(hora) - TIME_TO_SEC(STR_TO_DATE(%s, '%H:%i'))) < 7200
+                )
+            """
+            params = (comensales, fecha, hora)
+        
+        return self.db.execute_query(query, params)
     
     def create_reservation(self, id_usuario, id_mesa, fecha, hora, comensales, observaciones=None):
         try:

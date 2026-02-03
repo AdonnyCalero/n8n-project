@@ -82,6 +82,21 @@
                     </button>
                 </div>
             </div>
+            
+            <!-- Zonas del Restaurante -->
+            <div id="homeZonesContainer" class="row g-4 mb-4">
+                <div class="col-12 text-center">
+                    <h3 class="mb-4"><i class="bi bi-grid-3x3-gap"></i> Nuestras Zonas</h3>
+                </div>
+                <div id="homeZonesList" class="row g-4">
+                    <div class="col-12 text-center">
+                        <div class="spinner-border text-primary" role="status">
+                            <span class="visually-hidden">Cargando...</span>
+                        </div>
+                        <p class="text-muted mt-2">Cargando zonas...</p>
+                    </div>
+                </div>
+            </div>
         </section>
 
         <!-- Login/Register Section -->
@@ -177,7 +192,7 @@
                                 </div>
                                 
                                 <div class="row">
-                                    <div class="col-md-6 mb-3">
+                                    <div class="col-md-6 mb-3" id="comensalesContainer">
                                         <label for="reservaComensales" class="form-label">Número de comensales</label>
                                         <input type="number" class="form-control" id="reservaComensales" min="1" max="20" value="2" required>
                                         <div class="form-text text-muted">
@@ -187,11 +202,30 @@
                                             El número de comensales debe estar entre 1 y 20
                                         </div>
                                     </div>
-                                    <div class="col-md-6 mb-3">
+                                    <div class="col-md-6 mb-3" id="zonaPreferidaContainer">
                                         <label for="reservaZona" class="form-label">Zona preferida</label>
                                         <select class="form-select" id="reservaZona">
                                             <option value="">Cualquier zona</option>
                                         </select>
+                                    </div>
+                                </div>
+
+                                <!-- Modo de Reserva: Mesa o Zona -->
+                                <div class="mb-4">
+                                    <label class="form-label fw-bold">Tipo de Reserva</label>
+                                    <div class="btn-group w-100" role="group">
+                                        <input type="radio" class="btn-check" name="reservationMode" id="modeTable" value="mesa" checked onchange="toggleReservationMode()">
+                                        <label class="btn btn-outline-primary" for="modeTable">
+                                            <i class="bi bi-table"></i> Mesa Individual
+                                        </label>
+                                        
+                                        <input type="radio" class="btn-check" name="reservationMode" id="modeZone" value="zona" onchange="toggleReservationMode()">
+                                        <label class="btn btn-outline-success" for="modeZone">
+                                            <i class="bi bi-shop-window"></i> Zona(s) Completa(s)
+                                        </label>
+                                    </div>
+                                    <div class="form-text text-muted mt-1">
+                                        <i class="bi bi-info-circle"></i> Selecciona si quieres reservar una mesa específica o una zona completa del restaurante
                                     </div>
                                 </div>
 
@@ -207,9 +241,30 @@
                                     <div id="tablesList" class="row g-3"></div>
                                 </div>
 
+                                <!-- Available Zones -->
+                                <div id="availableZones" class="mb-3" style="display: none;">
+                                    <h5 class="mb-3">Zonas Disponibles</h5>
+                                    <div class="alert alert-info mb-3">
+                                        <i class="bi bi-info-circle"></i> Puedes seleccionar <strong>una o varias zonas</strong>. 
+                                        La capacidad total se calculará automáticamente.
+                                    </div>
+                                    <div id="zonesList" class="row g-3"></div>
+                                </div>
+
                                 <!-- Selected Table -->
                                 <div id="selectedTable" class="alert alert-success" style="display: none;">
                                     <h6>Mesa Seleccionada: <span id="selectedTableInfo"></span></h6>
+                                </div>
+
+                                <!-- Selected Zones -->
+                                <div id="selectedZones" class="alert alert-success" style="display: none;">
+                                    <h6><i class="bi bi-shop-window"></i> Zona(s) Seleccionada(s):</h6>
+                                    <div id="selectedZonesList"></div>
+                                    <hr class="my-2">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <span class="fw-bold">Capacidad Total:</span>
+                                        <span id="selectedZonesCapacity" class="badge bg-primary fs-6">0 personas</span>
+                                    </div>
                                 </div>
 
                                 <div class="mb-3">

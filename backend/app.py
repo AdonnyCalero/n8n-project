@@ -81,18 +81,24 @@ def login():
 
 @app.route('/api/zonas', methods=['GET'])
 def get_zones():
-    query = """
-        SELECT z.*, 
-               COUNT(m.id) as total_mesas,
-               SUM(m.capacidad) as total_capacidad,
-               SUM(CASE WHEN m.estado = 'disponible' THEN 1 ELSE 0 END) as mesas_disponibles
-        FROM zonas z
-        LEFT JOIN mesas m ON z.id = m.id_zona
-        GROUP BY z.id
-        ORDER BY z.nombre
-    """
-    zones = db.execute_query(query)
-    return jsonify(zones)
+    try:
+        query = """
+            SELECT z.*, 
+                   COUNT(m.id) as total_mesas,
+                   SUM(m.capacidad) as total_capacidad,
+                   SUM(CASE WHEN m.estado = 'disponible' THEN 1 ELSE 0 END) as mesas_disponibles
+            FROM zonas z
+            LEFT JOIN mesas m ON z.id = m.id_zona
+            GROUP BY z.id
+            ORDER BY z.nombre
+        """
+        zones = db.execute_query(query)
+        return jsonify(zones)
+    except Exception as e:
+        import traceback
+        print(f"ERROR en get_zones: {str(e)}")
+        print(f"Traceback: {traceback.format_exc()}")
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/api/zonas', methods=['POST'])
 @jwt_required()
@@ -325,16 +331,22 @@ def get_tables():
 
 @app.route('/api/disponibilidad', methods=['GET'])
 def check_availability():
-    fecha = request.args.get('fecha')
-    hora = request.args.get('hora')
-    comensales = int(request.args.get('comensales', 1))
-    id_zona = request.args.get('id_zona')
-    
-    if not all([fecha, hora]):
-        return jsonify({'error': 'Fecha y hora requeridas'}), 400
-    
-    available_tables = reservation_manager.check_availability(fecha, hora, comensales, id_zona)
-    return jsonify({'mesas_disponibles': available_tables})
+    try:
+        fecha = request.args.get('fecha')
+        hora = request.args.get('hora')
+        comensales = int(request.args.get('comensales', 1))
+        id_zona = request.args.get('id_zona')
+        
+        if not all([fecha, hora]):
+            return jsonify({'error': 'Fecha y hora requeridas'}), 400
+        
+        available_tables = reservation_manager.check_availability(fecha, hora, comensales, id_zona)
+        return jsonify({'mesas_disponibles': available_tables})
+    except Exception as e:
+        import traceback
+        print(f"ERROR en check_availability: {str(e)}")
+        print(f"Traceback: {traceback.format_exc()}")
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/api/reservas', methods=['POST'])
 @jwt_required()
